@@ -15,7 +15,7 @@ namespace CQ.ApiElements.Dtos
             return InnerMap();
         }
 
-        protected virtual void Assert() { };
+        protected virtual void Assert() { }
 
         protected abstract TEntity InnerMap();
     }
