@@ -1,0 +1,109 @@
+namespace Sony.Ci.ErrorMapping.Core
+{
+    public class ExceptionMappingService : IExceptionMappingService
+    {
+        public Dictionary<Type, ExceptionMappings> Mappings { get; private set; }
+
+        public ILogger Logger { get; private set; }
+
+        public ExceptionMappingService(ILogger logger)
+        {
+            Logger = logger;
+            Mappings = new Dictionary<Type, ExceptionMappings>();
+        }
+
+        public ExceptionHttpResponse HandleException(ExceptionContext exceptionContext)
+        {
+            Exception exception = exceptionContext.Exception;
+            if (!Mappings.ContainsKey(exception.GetType()))
+            {
+                return ExceptionHttpResponse.Default;
+            }
+
+            ExceptionMapping mapping = Mappings[exception.GetType()].GetMapping(exceptionContext.Source);
+            string message = mapping.LogMessage(exception, exceptionContext);
+            object obj = mapping.ExtraInformationGetter(exception, exceptionContext);
+            if (mapping.LogLevel == "Error")
+            {
+                ILogger logger = Logger;
+                object extraInformation = obj;
+                logger.Error(message, exception, null, extraInformation);
+            }
+            else
+            {
+                ILogger logger2 = Logger;
+                object extraInformation = obj;
+                logger2.Warning(message, exception, null, extraInformation);
+            }
+
+            return new ExceptionHttpResponse
+            {
+                Code = mapping.ResponseCode,
+                IsOAuth2Error = mapping.IsOAuth2Error,
+                Message = mapping.ResponseMessage(exception, exceptionContext),
+                StatusCode = mapping.ResponseStatusCode
+            };
+        }
+
+        public void RegisterMapping<TException>(string logMessage, Func<TException, ExceptionContext, object> extraInformationGetter, HttpStatusCode responseStatusCode, string responseMessage, string responseCode, string logLevel = "Warning", string controllerName = null, bool isOAuth2Error = false) where TException : Exception
+        {
+            Func<Exception, ExceptionContext, object> extraInformationGetter2 = delegate (Exception exception, ExceptionContext context)
+            {
+                TException arg = exception as TException;
+                return extraInformationGetter(arg, context);
+            };
+            Func<Exception, ExceptionContext, string> logMessage2 = (Exception e, ExceptionContext c) => logMessage;
+            Func<Exception, ExceptionContext, string> responseMessage2 = (Exception e, ExceptionContext c) => responseMessage;
+            ExceptionMapping item = new ExceptionMapping
+            {
+                BaseLogMessage = logMessage,
+                LogMessage = logMessage2,
+                ExtraInformationGetter = extraInformationGetter2,
+                ResponseStatusCode = responseStatusCode,
+                ResponseMessage = responseMessage2,
+                ResponseCode = responseCode,
+                ControllerName = controllerName,
+                LogLevel = logLevel,
+                IsOAuth2Error = isOAuth2Error
+            };
+            if (Mappings.ContainsKey(typeof(TException)))
+            {
+                Mappings[typeof(TException)].Mappings.Add(item);
+                return;
+            }
+
+            ExceptionMappings exceptionMappings = new ExceptionMappings();
+            exceptionMappings.Mappings.Add(item);
+            Mappings.Add(typeof(TException), exceptionMappings);
+        }
+
+        public void RegisterMapping<TException>(Func<Exception, ExceptionContext, string> logMessageFunc, Func<TException, ExceptionContext, object> extraInformationGetter, HttpStatusCode responseStatusCode, Func<Exception, ExceptionContext, string> responseMessageFunc, string responseCode, string logLevel = "Warning", string controllerName = null, bool isOAuth2Error = false) where TException : Exception
+        {
+            Func<Exception, ExceptionContext, object> extraInformationGetter2 = delegate (Exception exception, ExceptionContext context)
+            {
+                TException arg = exception as TException;
+                return extraInformationGetter(arg, context);
+            };
+            ExceptionMapping item = new ExceptionMapping
+            {
+                LogMessage = logMessageFunc,
+                ExtraInformationGetter = extraInformationGetter2,
+                ResponseStatusCode = responseStatusCode,
+                ResponseMessage = responseMessageFunc,
+                ResponseCode = responseCode,
+                ControllerName = controllerName,
+                LogLevel = logLevel,
+                IsOAuth2Error = isOAuth2Error
+            };
+            if (Mappings.ContainsKey(typeof(TException)))
+            {
+                Mappings[typeof(TException)].Mappings.Add(item);
+                return;
+            }
+
+            ExceptionMappings exceptionMappings = new ExceptionMappings();
+            exceptionMappings.Mappings.Add(item);
+            Mappings.Add(typeof(TException), exceptionMappings);
+        }
+    }
+}

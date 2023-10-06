@@ -1,10 +1,12 @@
 ﻿using CQ.Api.Filters.Exceptions;
+using CQ.ApiElements.Filters.Extension;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -26,58 +28,23 @@ namespace CQ.ApiElements.Filters
             }
             catch (MissingTokenException)
             {
-                context.Result = new ObjectResult(new
-                {
-                    Code = "Unauthenticated",
-                    Message = $"Need to be authenticated"
-                })
-                {
-                    StatusCode = 401,
-                };
+                context.Result = context.HttpContext.Request.CreatePlayerFinderErrorResponse(HttpStatusCode.Unauthorized, "Unauthenticated", $"Need to be authenticated");
             }
             catch (TokenIsNotValidException)
             {
-                context.Result = new ObjectResult(new
-                {
-                    Code = "InvalidTokenFormat",
-                    Message = $"Invalid format of token"
-                })
-                {
-                    StatusCode = 403,
-                };
+                context.Result = context.HttpContext.Request.CreatePlayerFinderErrorResponse(HttpStatusCode.Forbidden, "InvalidTokenFormat", $"Invalid format of token");
             }
             catch (AccessDeniedException ex)
             {
-                context.Result = new ObjectResult(new
-                {
-                    Code = "AccessDenied",
-                    Message = $"Missing permission {ex.Permission}"
-                })
-                {
-                    StatusCode = 403,
-                };
+                context.Result = context.HttpContext.Request.CreatePlayerFinderErrorResponse(HttpStatusCode.Forbidden, "AccessDenied", $"Missing permission {ex.Permission}");
             }
-            catch(ArgumentNullException ex)
+            catch (ArgumentNullException ex)
             {
-                context.Result = new ObjectResult(new
-                {
-                    Code = "RequestInvalid",
-                    Message = $"Missing or invalid {ex.ParamName}"
-                })
-                {
-                    StatusCode = 400,
-                };
+                context.Result = context.HttpContext.Request.CreatePlayerFinderErrorResponse(HttpStatusCode.BadRequest, "RequestInvalid", $"Missing or invalid {ex.ParamName}");
             }
             catch (Exception)
             {
-                context.Result = new ObjectResult(new
-                {
-                    Code = "InternalProblem",
-                    Message = "Problems with the server"
-                })
-                {
-                    StatusCode = 500,
-                };
+                context.Result = context.HttpContext.Request.CreatePlayerFinderErrorResponse(HttpStatusCode.InternalServerError, "InternalProblem", "Problems with the server");
             }
         }
 
