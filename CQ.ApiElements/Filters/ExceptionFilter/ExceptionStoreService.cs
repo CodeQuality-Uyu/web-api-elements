@@ -45,7 +45,15 @@ namespace CQ.ApiElements.Filters
             };
         }
 
-        public void RegisterMapping<TException>(string logMessage, Func<TException, CustomExceptionContext, object> extraInformationGetter, HttpStatusCode responseStatusCode, string responseMessage, string responseCode, string logLevel = "Warning", string controllerName = null, bool isOAuth2Error = false) where TException : Exception
+        public void RegisterMapping<TException>(
+            string logMessage, 
+            Func<TException, CustomExceptionContext, object> extraInformationGetter, 
+            HttpStatusCode responseStatusCode, 
+            string responseMessage, 
+            string responseCode, 
+            string logLevel = "Warning", 
+            string controllerName = null, 
+            bool isDefault = false) where TException : Exception
         {
             Func<Exception, CustomExceptionContext, object> extraInformationGetter2 = delegate (Exception exception, CustomExceptionContext context)
             {
@@ -64,7 +72,7 @@ namespace CQ.ApiElements.Filters
                 ResponseCode = responseCode,
                 ControllerName = controllerName,
                 LogLevel = logLevel,
-                IsOAuth2Error = isOAuth2Error
+                IsDefault = isDefault
             };
 
             AddException<TException>(item);
@@ -78,7 +86,7 @@ namespace CQ.ApiElements.Filters
             string responseCode, 
             string logLevel = "Warning", 
             string controllerName = null, 
-            bool isOAuth2Error = false) where TException : Exception
+            bool isDefault = false) where TException : Exception
         {
             Func<Exception, CustomExceptionContext, object> extraInformationGetter2 = delegate (Exception exception, CustomExceptionContext context)
             {
@@ -94,17 +102,26 @@ namespace CQ.ApiElements.Filters
                 ResponseCode = responseCode,
                 ControllerName = controllerName,
                 LogLevel = logLevel,
-                IsOAuth2Error = isOAuth2Error
+                IsDefault = isDefault
             };
 
             AddException<TException>(item);
         }
 
-        protected void AddException<TException>(ExceptionMapping item)
+        protected virtual void AddException<TException>(ExceptionMapping item)
         {
             if (Mappings.ContainsKey(typeof(TException)))
             {
-                Mappings[typeof(TException)].Mappings.Add(item);
+                var exceptions = Mappings[typeof(TException)].Mappings;
+
+                var defaultException = exceptions.FirstOrDefault(e => e.IsDefault);
+
+                if(defaultException != null)
+                {
+                    defaultException.IsDefault = false;
+                }
+
+                exceptions.Add(item);
                 return;
             }
 

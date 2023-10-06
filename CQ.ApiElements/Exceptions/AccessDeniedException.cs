@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CQ.Api.Filters.Exceptions
 {
-    internal class AccessDeniedException : Exception
+    public class AccessDeniedException : Exception
     {
         public string Permission { get; set; }
 

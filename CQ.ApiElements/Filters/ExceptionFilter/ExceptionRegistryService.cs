@@ -20,7 +20,7 @@ namespace CQ.ApiElements.Filters
                     return "Invalid argument";
                 }
 
-                return $"Missing or invalid argument: {customException.ParamName}";
+                return $"Missing or invalid {customException.ParamName}";
             }, 
                 (exception, context) => new { Prop = exception.ParamName }, 
                 HttpStatusCode.BadRequest, 
@@ -32,8 +32,10 @@ namespace CQ.ApiElements.Filters
                     return "Invalid argument";
                 }
 
-                return $"Missing or invalid argument: {customException.ParamName}";
-            }, "InvalidProp");
+                return $"Missing or invalid {customException.ParamName}";
+            },
+                "RequestInvalid",
+                isDefault: true);
     
             RegisterBusinessExceptions(exceptionStoreService);
         }

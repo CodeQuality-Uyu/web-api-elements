@@ -1,28 +1,28 @@
 ﻿using CQ.Api.Filters.Exceptions;
-using CQ.ApiElements.Filters.Extension;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using CQ.ApiElements.Filters.Extension;
 
 namespace CQ.ApiElements.Filters
 {
-    public class AuthenticationFilter : Attribute, IAuthorizationFilter
+    public class AuthenticationAsyncFilter : Attribute, IAsyncAuthorizationFilter
     {
-        public void OnAuthorization(AuthorizationFilterContext context)
+        public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
         {
             try
             {
                 var token = context.HttpContext.Request.Headers["Authorization"];
 
-                AssertToken(token);
+                await AssertTokenAsync(token).ConfigureAwait(false);
 
-                AssertUserPermissions(token, context);
+                await AssertUserPermissionsAsync(token, context).ConfigureAwait(false);
             }
             catch (MissingTokenException ex)
             {
@@ -46,32 +46,34 @@ namespace CQ.ApiElements.Filters
             }
         }
 
-        private void AssertToken(string? token)
+        private async Task AssertTokenAsync(string? token)
         {
             if (string.IsNullOrEmpty(token))
             {
                 throw new MissingTokenException();
             }
 
-            this.AssertTokenFormat(token);
+            await this.AssertTokenFormatAsync(token).ConfigureAwait(false);
         }
 
-        private void AssertTokenFormat(string token)
+        private async Task AssertTokenFormatAsync(string token)
         {
-            if (!this.IsFormatOfTokenValid(token))
+            var isFormatValid = await this.IsFormatOfTokenValidAsync(token).ConfigureAwait(false);
+            
+            if (!isFormatValid)
             {
                 throw new TokenIsNotValidException();
             }
         }
 
-        protected virtual bool IsFormatOfTokenValid(string token)
+        protected virtual async Task<bool> IsFormatOfTokenValidAsync(string token)
         {
             return true;
         }
 
-        private void AssertUserPermissions(string token, AuthorizationFilterContext context)
+        private async Task AssertUserPermissionsAsync(string token, AuthorizationFilterContext context)
         {
-            var (isUserAuthorized, permission) = this.IsUserAuthorized(token, context);
+            var (isUserAuthorized, permission) = await this.IsUserAuthorizedAsync(token, context).ConfigureAwait(false);
 
             if (!isUserAuthorized)
             {
@@ -79,23 +81,23 @@ namespace CQ.ApiElements.Filters
             }
         }
 
-        protected virtual (bool isAuthorized, string permission) IsUserAuthorized(string token, AuthorizationFilterContext context)
+        protected virtual async Task<(bool isAuthorized, string permission)> IsUserAuthorizedAsync(string token, AuthorizationFilterContext context)
         {
-            var userPermissions = this.GetUserPermissions(token);
+            var userPermissions = await this.GetUserPermissionsAsync(token).ConfigureAwait(false);
 
-            var permission = this.MapRequestToPermission(context.HttpContext.Request);
+            var permission = await this.MapRequestToPermissionAsync(context.HttpContext.Request).ConfigureAwait(false);
 
             var userHasPermission = userPermissions.Contains(permission);
 
             return (userHasPermission, permission);
         }
 
-        protected virtual List<string> GetUserPermissions(string token)
+        protected virtual async Task<List<string>> GetUserPermissionsAsync(string token)
         {
             return new List<string>() { "generic" };
         }
 
-        protected virtual string MapRequestToPermission(HttpRequest request) { return "generic"; }
+        protected virtual async Task<string> MapRequestToPermissionAsync(HttpRequest request) { return "generic"; }
 
         protected virtual IActionResult BuildMissingAuthenticationResponse(MissingTokenException ex, AuthorizationFilterContext context)
         {

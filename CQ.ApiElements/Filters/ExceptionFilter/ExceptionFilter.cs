@@ -41,6 +41,7 @@ namespace CQ.ApiElements.Filters
             return new CustomExceptionContext
             {
                 Exception = context.Exception,
+                ControllerName = context.RouteData.Values["controller"].ToString()
             };
         }
 

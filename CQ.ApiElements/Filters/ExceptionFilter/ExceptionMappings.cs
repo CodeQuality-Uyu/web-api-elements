@@ -17,7 +17,21 @@ namespace CQ.ApiElements.Filters
 
         public ExceptionMapping GetMapping(string controllerName)
         {
-            return Mappings.FirstOrDefault((ExceptionMapping m) => string.Compare(m.ControllerName, controllerName, StringComparison.OrdinalIgnoreCase) == 0) ?? Mappings.First();
+            var exceptionOfController = Mappings.FirstOrDefault((ExceptionMapping m) => string.Compare(m.ControllerName, controllerName, StringComparison.OrdinalIgnoreCase) == 0);
+
+            if(exceptionOfController != null) 
+            {
+                return exceptionOfController;
+            }
+
+            var defaultException = Mappings.FirstOrDefault(m => m.IsDefault);
+
+            if(defaultException != null)
+            {
+                return defaultException;
+            }
+
+            return  Mappings.First();
         }
     }
 }

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CQ.Api.Filters.Exceptions
 {
-    internal class TokenIsNotValidException:Exception
+    public class TokenIsNotValidException:Exception
     {
     }
 }

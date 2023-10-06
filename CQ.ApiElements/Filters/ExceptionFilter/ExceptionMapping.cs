@@ -23,8 +23,8 @@ namespace CQ.ApiElements.Filters
 
         public string ControllerName { get; set; }
 
-        public string LogLevel { get; set; }
+        public bool IsDefault { get; set; }
 
-        public bool IsOAuth2Error { get; set; }
+        public string LogLevel { get; set; }
     }
 }
