@@ -1,5 +1,7 @@
 ﻿using CQ.ApiElements.Config.Extensions;
 using CQ.ApiElements.Filters;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -11,7 +13,22 @@ namespace CQ.ApiElements.Config
 {
     public static class DependencyInjection
     {
-        public static IServiceCollection AddExceptionFilter<TExceptionRegistry>(this IServiceCollection services, LifeTime lifeTime) 
+        public static MvcOptions AddExceptionFilter(this MvcOptions options)
+        {
+            options.Filters.Add<ExceptionFilter>();
+
+            return options;
+        }
+
+        public static MvcOptions AddExceptionFilter<TExceptionFilter>(this MvcOptions options)
+            where TExceptionFilter : ExceptionFilter
+        {
+            options.Filters.Add<TExceptionFilter>();
+
+            return options;
+        }
+
+        public static IServiceCollection AddHandleException<TExceptionRegistry>(this IServiceCollection services, LifeTime lifeTime) 
             where TExceptionRegistry : ExceptionRegistryService 
         {
             services.AddService<ExceptionRegistryService, TExceptionRegistry>(lifeTime);
@@ -19,7 +36,7 @@ namespace CQ.ApiElements.Config
             return services;
         }
 
-        public static IServiceCollection AddExceptionFilter<TExceptionStore, TExceptionRegistry>(
+        public static IServiceCollection AddHandleException<TExceptionStore, TExceptionRegistry>(
             this IServiceCollection services, 
             LifeTime storeLifeTime,
             LifeTime registryLifeTime)
