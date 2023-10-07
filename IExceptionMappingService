@@ -1,0 +1,13 @@
+namespace Sony.Ci.ErrorMapping.Core
+{
+    public interface IExceptionMappingService
+    {
+        Dictionary<Type, ExceptionMappings> Mappings { get; }
+
+        ExceptionHttpResponse HandleException(ExceptionContext exceptionContext);
+
+        void RegisterMapping<TException>(string logMessage, Func<TException, ExceptionContext, object> extraInformationGetter, HttpStatusCode responseStatusCode, string responseMessage, string responseCode, string logLevel = "Warning", string controllerName = null, bool isOAuth2Error = false) where TException : Exception;
+
+        void RegisterMapping<TException>(Func<Exception, ExceptionContext, string> logMessageFunc, Func<TException, ExceptionContext, object> extraInformationGetter, HttpStatusCode responseStatusCode, Func<Exception, ExceptionContext, string> responseMessageFunc, string responseCode, string logLevel = "Warning", string controllerName = null, bool isOAuth2Error = false) where TException : Exception;
+    }
+}
