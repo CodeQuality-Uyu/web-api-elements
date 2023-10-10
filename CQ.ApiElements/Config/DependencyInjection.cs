@@ -1,5 +1,5 @@
-﻿using CQ.ApiElements.Config.Extensions;
-using CQ.ApiElements.Filters;
+﻿using CQ.ApiElements.Filters;
+using CQ.ServiceExtension;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,10 +28,11 @@ namespace CQ.ApiElements.Config
             return options;
         }
 
-        public static IServiceCollection AddHandleException<TExceptionRegistry>(this IServiceCollection services, LifeTime lifeTime) 
+        public static IServiceCollection AddHandleException<TExceptionRegistry>(this IServiceCollection services, LifeTime registryLifeTime, LifeTime storeLifeTime) 
             where TExceptionRegistry : ExceptionRegistryService 
         {
-            services.AddService<ExceptionRegistryService, TExceptionRegistry>(lifeTime);
+            services.AddService<ExceptionStoreService>(storeLifeTime);
+            services.AddService<ExceptionRegistryService, TExceptionRegistry>(registryLifeTime);
 
             return services;
         }
