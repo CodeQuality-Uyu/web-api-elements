@@ -25,7 +25,7 @@ namespace CQ.ApiElements.Filters
                 return ExceptionHttpResponse.Default;
             }
 
-            ExceptionMapping mapping = Mappings[exception.GetType()].GetMapping(exceptionContext.ControllerName);
+            var mapping = Mappings[exception.GetType()].GetMapping(exceptionContext.ControllerName);
             string message = mapping.LogMessage(exception, exceptionContext);
             object obj = mapping.ExtraInformationGetter(exception, exceptionContext);
             if (mapping.LogLevel == "Error")
@@ -55,18 +55,13 @@ namespace CQ.ApiElements.Filters
             string controllerName = null, 
             bool isDefault = false) where TException : Exception
         {
-            Func<Exception, CustomExceptionContext, object> extraInformationGetter2 = delegate (Exception exception, CustomExceptionContext context)
-            {
-                TException arg = exception as TException;
-                return extraInformationGetter(arg, context);
-            };
             Func<Exception, CustomExceptionContext, string> logMessage2 = (Exception e, CustomExceptionContext c) => logMessage;
             Func<Exception, CustomExceptionContext, string> responseMessage2 = (Exception e, CustomExceptionContext c) => responseMessage;
-            ExceptionMapping item = new ExceptionMapping
+            var item = new ExceptionMapping<TException>
             {
                 BaseLogMessage = logMessage,
                 LogMessage = logMessage2,
-                ExtraInformationGetter = extraInformationGetter2,
+                ExtraInformationGetter = extraInformationGetter,
                 ResponseStatusCode = responseStatusCode,
                 ResponseMessage = responseMessage2,
                 ResponseCode = responseCode,
@@ -75,28 +70,23 @@ namespace CQ.ApiElements.Filters
                 IsDefault = isDefault
             };
 
-            AddException<TException>(item);
+            AddException(item);
         }
 
         public void RegisterMapping<TException>(
-            Func<Exception, CustomExceptionContext, string> logMessageFunc, 
+            Func<TException, CustomExceptionContext, string> logMessageFunc, 
             Func<TException, CustomExceptionContext, object> extraInformationGetter, 
             HttpStatusCode responseStatusCode, 
-            Func<Exception, CustomExceptionContext, string> responseMessageFunc, 
+            Func<TException, CustomExceptionContext, string> responseMessageFunc, 
             string responseCode, 
             string logLevel = "Warning", 
             string controllerName = null, 
             bool isDefault = false) where TException : Exception
         {
-            Func<Exception, CustomExceptionContext, object> extraInformationGetter2 = delegate (Exception exception, CustomExceptionContext context)
-            {
-                TException arg = exception as TException;
-                return extraInformationGetter(arg, context);
-            };
-            ExceptionMapping item = new ExceptionMapping
+            var item = new ExceptionMapping<TException>
             {
                 LogMessage = logMessageFunc,
-                ExtraInformationGetter = extraInformationGetter2,
+                ExtraInformationGetter = extraInformationGetter,
                 ResponseStatusCode = responseStatusCode,
                 ResponseMessage = responseMessageFunc,
                 ResponseCode = responseCode,
@@ -105,10 +95,11 @@ namespace CQ.ApiElements.Filters
                 IsDefault = isDefault
             };
 
-            AddException<TException>(item);
+            AddException(item);
         }
 
-        protected virtual void AddException<TException>(ExceptionMapping item)
+        protected virtual void AddException<TException>(ExceptionMapping<TException> item)
+            where TException : Exception
         {
             if (Mappings.ContainsKey(typeof(TException)))
             {
@@ -125,7 +116,7 @@ namespace CQ.ApiElements.Filters
                 return;
             }
 
-            ExceptionMappings exceptionMappings = new ExceptionMappings();
+            var exceptionMappings = new ExceptionMappings();
             exceptionMappings.Mappings.Add(item);
             Mappings.Add(typeof(TException), exceptionMappings);
         }

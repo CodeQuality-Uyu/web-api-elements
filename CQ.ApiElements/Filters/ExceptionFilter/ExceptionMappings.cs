@@ -8,16 +8,16 @@ namespace CQ.ApiElements.Filters
 {
     public sealed class ExceptionMappings
     {
-        public IList<ExceptionMapping> Mappings { get; set; }
+        public IList<ExceptionMapping<Exception>> Mappings { get; set; }
 
         public ExceptionMappings()
         {
-            Mappings = new List<ExceptionMapping>();
+            Mappings = new List<ExceptionMapping<Exception>>();
         }
 
-        public ExceptionMapping GetMapping(string controllerName)
+        public ExceptionMapping<Exception> GetMapping(string controllerName)
         {
-            var exceptionOfController = Mappings.FirstOrDefault((ExceptionMapping m) => string.Compare(m.ControllerName, controllerName, StringComparison.OrdinalIgnoreCase) == 0);
+            var exceptionOfController = Mappings.FirstOrDefault((ExceptionMapping<Exception> m) => string.Compare(m.ControllerName, controllerName, StringComparison.OrdinalIgnoreCase) == 0);
 
             if(exceptionOfController != null) 
             {

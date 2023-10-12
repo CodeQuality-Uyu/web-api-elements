@@ -7,17 +7,17 @@ using System.Threading.Tasks;
 
 namespace CQ.ApiElements.Filters
 {
-    public class ExceptionMapping
+    public class ExceptionMapping<TException> where TException : Exception
     {
         public string BaseLogMessage { get; set; }
 
-        public Func<Exception, CustomExceptionContext, string> LogMessage { get; set; }
+        public Func<TException, CustomExceptionContext, string> LogMessage { get; set; }
 
-        public Func<Exception, CustomExceptionContext, object> ExtraInformationGetter { get; set; }
+        public Func<TException, CustomExceptionContext, object> ExtraInformationGetter { get; set; }
 
         public HttpStatusCode ResponseStatusCode { get; set; }
 
-        public Func<Exception, CustomExceptionContext, string> ResponseMessage { get; set; }
+        public Func<TException, CustomExceptionContext, string> ResponseMessage { get; set; }
 
         public string ResponseCode { get; set; }
 
