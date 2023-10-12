@@ -34,9 +34,35 @@ namespace CQ.ApiElements.Filters
 
                 return $"Missing or invalid {customException.ParamName}";
             },
-                "RequestInvalid",
+                "InvalidArgument",
                 isDefault: true);
-    
+
+            exceptionStoreService.RegisterMapping<ArgumentException>(
+                (exception, context) =>
+                {
+                    var customException = exception as ArgumentException;
+                    if (customException == null)
+                    {
+                        return "Invalid argument";
+                    }
+
+                    return customException.Message;
+                },
+                (exception, context) => new { Prop = exception.ParamName },
+                HttpStatusCode.BadRequest,
+                (exception, context) =>
+                {
+                    var customException = exception as ArgumentException;
+                    if (customException == null)
+                    {
+                        return "Invalid argument";
+                    }
+
+                    return customException.Message;
+                },
+                "InvalidArgument",
+                isDefault: true);
+
             RegisterBusinessExceptions(exceptionStoreService);
         }
 
