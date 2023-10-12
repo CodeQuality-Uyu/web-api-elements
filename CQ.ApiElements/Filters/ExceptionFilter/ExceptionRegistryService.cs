@@ -41,7 +41,7 @@ namespace CQ.ApiElements.Filters
                 (exception, context) =>
                 {
                     var customException = exception as ArgumentException;
-                    if (customException == null)
+                    if (customException == null || string.IsNullOrEmpty(customException.Message))
                     {
                         return "Invalid argument";
                     }
@@ -53,7 +53,7 @@ namespace CQ.ApiElements.Filters
                 (exception, context) =>
                 {
                     var customException = exception as ArgumentException;
-                    if (customException == null)
+                    if (customException == null || string.IsNullOrEmpty(customException.Message))
                     {
                         return "Invalid argument";
                     }
