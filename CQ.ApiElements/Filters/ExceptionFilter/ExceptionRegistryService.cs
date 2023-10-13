@@ -11,32 +11,38 @@ namespace CQ.ApiElements.Filters
     {
         public void RegisterKnownExceptions(ExceptionStoreService exceptionStoreService)
         {
-            exceptionStoreService.RegisterMapping<ArgumentNullException>(
-                (exception, context) =>
-            {
-                var customException = exception as ArgumentNullException;
-                if (customException == null)
-                {
-                    return "Invalid argument";
-                }
+            exceptionStoreService.RegisterException(
+                new DinamicExceptionMapping<ArgumentNullException>
+                (
+                    (exception, context) =>
+                    {
+                        if (string.IsNullOrEmpty(exception.Message))
+                        {
+                            return $"Missing or invalid {exception.ParamName}";
+                        }
 
-                return $"Missing or invalid {customException.ParamName}";
-            }, 
-                (exception, context) => new { Prop = exception.ParamName }, 
-                HttpStatusCode.BadRequest, 
-                (exception, context) =>
-            {
-                var customException = exception as ArgumentNullException;
-                if (customException == null)
-                {
-                    return "Invalid argument";
-                }
+                        return exception.Message;
+                    },
+                   "InvalidArgument",
+                    HttpStatusCode.BadRequest
+                ));
 
-                return $"Missing or invalid {customException.ParamName}";
-            },
-                "RequestInvalid",
-                isDefault: true);
-    
+            exceptionStoreService.RegisterException(
+                new DinamicExceptionMapping<ArgumentException>
+                (
+                    (exception, context) =>
+                    {
+                        if (string.IsNullOrEmpty(exception.Message))
+                        {
+                            return "Invalid argument";
+                        }
+
+                        return exception.Message;
+                    },
+                    "InvalidArgument",
+                    HttpStatusCode.BadRequest
+                ));
+
             RegisterBusinessExceptions(exceptionStoreService);
         }
 

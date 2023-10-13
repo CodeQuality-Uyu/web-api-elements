@@ -99,27 +99,27 @@ namespace CQ.ApiElements.Filters
 
         protected virtual IActionResult BuildMissingAuthenticationResponse(MissingTokenException ex, AuthorizationFilterContext context)
         {
-            return context.HttpContext.Request.CreatePlayerFinderErrorResponse(HttpStatusCode.Unauthorized, "Unauthenticated", $"Need to be authenticated");
+            return context.HttpContext.Request.CreateCQErrorResponse(HttpStatusCode.Unauthorized, "Unauthenticated", $"Need to be authenticated");
         }
 
         protected virtual IActionResult BuildInvalidAuthenticationFormatResponse(TokenIsNotValidException ex, AuthorizationFilterContext context)
         {
-            return context.HttpContext.Request.CreatePlayerFinderErrorResponse(HttpStatusCode.Forbidden, "InvalidTokenFormat", $"Invalid format of token");
+            return context.HttpContext.Request.CreateCQErrorResponse(HttpStatusCode.Forbidden, "InvalidTokenFormat", $"Invalid format of token");
         }
 
         protected virtual IActionResult BuildUnauthorizedResponse(AccessDeniedException ex, AuthorizationFilterContext context)
         {
-            return context.HttpContext.Request.CreatePlayerFinderErrorResponse(HttpStatusCode.Forbidden, "AccessDenied", $"Missing permission {ex.Permission}");
+            return context.HttpContext.Request.CreateCQErrorResponse(HttpStatusCode.Forbidden, "AccessDenied", $"Missing permission {ex.Permission}");
         }
 
         protected virtual IActionResult BuldInvalidArgumentResponse(ArgumentNullException ex, AuthorizationFilterContext context)
         {
-            return context.HttpContext.Request.CreatePlayerFinderErrorResponse(HttpStatusCode.BadRequest, "RequestInvalid", $"Missing or invalid {ex.ParamName}");
+            return context.HttpContext.Request.CreateCQErrorResponse(HttpStatusCode.BadRequest, "RequestInvalid", $"Missing or invalid {ex.ParamName}");
         }
 
         protected virtual IActionResult BuildGenericResponse(AuthorizationFilterContext context)
         {
-            return context.HttpContext.Request.CreatePlayerFinderErrorResponse(HttpStatusCode.InternalServerError, "InternalProblem", "Problems with the server");
+            return context.HttpContext.Request.CreateCQErrorResponse(HttpStatusCode.InternalServerError, "InternalProblem", "Problems with the server");
         }
     }
 }

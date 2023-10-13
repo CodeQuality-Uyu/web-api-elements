@@ -11,7 +11,7 @@ namespace CQ.ApiElements.Filters.Extension
 {
     internal static class HttpResponseExtension
     {
-        public static IActionResult CreatePlayerFinderErrorResponse(this HttpRequest request, HttpStatusCode statusCode, string code, string message)
+        public static IActionResult CreateCQErrorResponse(this HttpRequest request, HttpStatusCode statusCode, string code, string message)
         {
             return new ObjectResult(new
             {

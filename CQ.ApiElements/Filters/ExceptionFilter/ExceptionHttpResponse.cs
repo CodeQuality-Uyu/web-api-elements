@@ -7,19 +7,27 @@ using System.Threading.Tasks;
 
 namespace CQ.ApiElements.Filters
 {
-    public class ExceptionHttpResponse
+    public record ExceptionHttpResponse
     {
-        public static ExceptionHttpResponse Default = new ExceptionHttpResponse
+        public static ExceptionHttpResponse Default = new (
+            "ExceptionOccurred",
+            "An exception has occurred",
+            HttpStatusCode.InternalServerError);
+
+        public string Message { get; init; }
+
+        public string Code { get; init; }
+
+        public HttpStatusCode StatusCode { get; init; }
+
+        public ExceptionHttpResponse(
+                string message,
+                string code,
+                HttpStatusCode statusCode)
         {
-            StatusCode = HttpStatusCode.InternalServerError,
-            Code = "ExceptionOccurred",
-            Message = "An exception has occurred."
-        };
-
-        public string Message { get; set; }
-
-        public string Code { get; set; }
-
-        public HttpStatusCode StatusCode { get; set; }
+            Message = message;
+            Code = code;
+            StatusCode = statusCode;
+        }
     }
 }

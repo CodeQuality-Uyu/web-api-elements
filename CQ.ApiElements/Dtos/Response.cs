@@ -12,7 +12,6 @@ namespace CQ.ApiElements.Dtos
         {
             Map(entity);
         }
-
         protected abstract void Map(TEntity entity);
     }
 }
