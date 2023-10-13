@@ -29,19 +29,19 @@ namespace CQ.ApiElements.Filters
         public abstract Type GetTypeRegistered();
     }
 
-    public record Log
+    public record Log(string Message, object? ExtraInformation, LogLevel Level);
+
+    public record LogLevel
     {
-        public string Message { get; }
+        public static LogLevel Warning = new LogLevel("Warning");
 
-        public object? ExtraInformation { get; }
+        public static LogLevel Error = new LogLevel("Error");
 
-        public string Level { get; }
+        public string Value { get; init; }
 
-        public Log(string message, object? extraInformation, string level)
+        private LogLevel(string value)
         {
-            Message = message;
-            ExtraInformation = extraInformation;
-            Level = level;
+            Value = value;
         }
     }
 }

@@ -46,7 +46,7 @@ namespace CQ.ApiElements.Filters
                 return new Log(
                     GetResponseMessage(customException, context),
                     null,
-                    "Warning");
+                    LogLevel.Warning);
             }
 
             if (Log == null)
@@ -66,20 +66,9 @@ namespace CQ.ApiElements.Filters
         }
     }
 
-    public class LogExceptionMapping<TException>
-        where TException : Exception
-    {
-        public Func<TException, CustomExceptionContext, string> Message { get; }
-
-        public Func<TException, CustomExceptionContext, object>? ExtraInformation { get; }
-
-        public string Level { get; }
-
-        public LogExceptionMapping(Func<TException, CustomExceptionContext, string> message, Func<TException, CustomExceptionContext, object>? extraInformation, string level)
-        {
-            Message = message;
-            ExtraInformation = extraInformation;
-            Level = level;
-        }
-    }
+    public record LogExceptionMapping<TException>(
+        Func<TException, CustomExceptionContext, string> Message, 
+        Func<TException, CustomExceptionContext, object>? ExtraInformation, 
+        LogLevel Level) 
+        where TException : Exception;
 }

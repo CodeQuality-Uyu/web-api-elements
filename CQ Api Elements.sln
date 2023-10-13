@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.4.33213.308
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CQ.ApiElements", "CQ.ApiElements\CQ.ApiElements.csproj", "{5A8CE710-7BEA-430A-A647-B9F61EEA73E0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQ.ApiElements", "CQ.ApiElements\CQ.ApiElements.csproj", "{5A8CE710-7BEA-430A-A647-B9F61EEA73E0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CQ.ApiElements.Test", "CQ.ApiElements.Test\CQ.ApiElements.Test.csproj", "{8F7C84F9-04BA-4EB8-B28B-72AC9F4BE0EA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{5A8CE710-7BEA-430A-A647-B9F61EEA73E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5A8CE710-7BEA-430A-A647-B9F61EEA73E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5A8CE710-7BEA-430A-A647-B9F61EEA73E0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8F7C84F9-04BA-4EB8-B28B-72AC9F4BE0EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8F7C84F9-04BA-4EB8-B28B-72AC9F4BE0EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8F7C84F9-04BA-4EB8-B28B-72AC9F4BE0EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8F7C84F9-04BA-4EB8-B28B-72AC9F4BE0EA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
