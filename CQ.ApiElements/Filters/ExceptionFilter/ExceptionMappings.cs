@@ -6,29 +6,30 @@ using System.Threading.Tasks;
 
 namespace CQ.ApiElements.Filters
 {
-    public sealed class ExceptionMappings
+    internal sealed class ExceptionMappings
     {
-        public IList<ExceptionMapping<Exception>> Mappings { get; set; }
+        private readonly IList<BaseExceptionMapping> Mappings;
 
-        public ExceptionMappings()
+        public ExceptionMappings(BaseExceptionMapping firstMapping)
         {
-            Mappings = new List<ExceptionMapping<Exception>>();
+            Mappings = new List<BaseExceptionMapping>
+            {
+                firstMapping
+            };
         }
 
-        public ExceptionMapping<Exception> GetMapping(string controllerName)
+        public void AddMapping(BaseExceptionMapping mapping)
         {
-            var exceptionOfController = Mappings.FirstOrDefault((ExceptionMapping<Exception> m) => string.Compare(m.ControllerName, controllerName, StringComparison.OrdinalIgnoreCase) == 0);
+            Mappings.Add(mapping);
+        }
+
+        public BaseExceptionMapping GetMapping(string controllerName)
+        {
+            var exceptionOfController = Mappings.FirstOrDefault((m) => string.Compare(m.ControllerName, controllerName, StringComparison.OrdinalIgnoreCase) == 0);
 
             if(exceptionOfController != null) 
             {
                 return exceptionOfController;
-            }
-
-            var defaultException = Mappings.FirstOrDefault(m => m.IsDefault);
-
-            if(defaultException != null)
-            {
-                return defaultException;
             }
 
             return  Mappings.First();

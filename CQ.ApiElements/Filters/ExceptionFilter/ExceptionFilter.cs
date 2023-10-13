@@ -10,7 +10,9 @@ namespace CQ.ApiElements.Filters
     {
         private readonly ExceptionStoreService _exeptionStore;
 
-        public ExceptionFilter(ExceptionStoreService exeptionStore, ExceptionRegistryService exeptionRegistryService)
+        public ExceptionFilter(
+            ExceptionStoreService exeptionStore, 
+            ExceptionRegistryService exeptionRegistryService)
         {
             _exeptionStore = exeptionStore;
 
@@ -31,23 +33,23 @@ namespace CQ.ApiElements.Filters
 
         private ExceptionHttpResponse HandleException(ExceptionContext context)
         {
-            var customExceptionContext = this.BuildCustomExceptionContext(context);
+            var customcontext = new CustomExceptionContext(
+                context.Exception,
+                context.RouteData.Values["controller"].ToString());
+
+            var customExceptionContext = this.BuildCustomExceptionContext(customcontext);
 
             return this._exeptionStore.HandleException(customExceptionContext);
         }
 
-        protected CustomExceptionContext BuildCustomExceptionContext(ExceptionContext context)
+        protected virtual CustomExceptionContext BuildCustomExceptionContext(CustomExceptionContext context)
         {
-            return new CustomExceptionContext
-            {
-                Exception = context.Exception,
-                ControllerName = context.RouteData.Values["controller"].ToString()
-            };
+            return context;
         }
 
-        protected IActionResult BuildResponse(ExceptionContext context, ExceptionHttpResponse error)
+        protected virtual IActionResult BuildResponse(ExceptionContext context, ExceptionHttpResponse error)
         {
-            return context.HttpContext.Request.CreatePlayerFinderErrorResponse(
+            return context.HttpContext.Request.CreateCQErrorResponse(
                     error.StatusCode,
                     error.Code,
                     error.Message

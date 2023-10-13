@@ -6,10 +6,16 @@ using System.Threading.Tasks;
 
 namespace CQ.ApiElements.Filters
 {
-    public class CustomExceptionContext
+    public record CustomExceptionContext
     {
-        public Exception Exception { get; set; }
+        public Exception Exception { get; init; }
 
-        public string ControllerName { get; set; }
+        public string ControllerName { get; init; }
+
+        public CustomExceptionContext(Exception exception, string controllerName)
+        {
+            Exception = exception;
+            ControllerName = controllerName;
+        }
     }
 }
