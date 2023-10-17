@@ -16,6 +16,8 @@ namespace CQ.ApiElements.Filters
 
         private Action<Log>? Logger;
 
+        private Action<Exception>? LoggerException;
+
         public ExceptionStoreService()
         {
             Mappings = new Dictionary<Type, ExceptionMappings>();
@@ -26,11 +28,21 @@ namespace CQ.ApiElements.Filters
             Logger = logger;
         }
 
+        public void AddLoggerUnhandleException(Action<Exception> logger)
+        {
+            LoggerException = logger;
+        }
+
         internal ExceptionHttpResponse HandleException(CustomExceptionContext exceptionContext)
         {
             Exception exception = exceptionContext.Exception;
             if (!Mappings.ContainsKey(exception.GetType()))
             {
+                if(LoggerException!= null)
+                {
+                    LoggerException(exception);
+                }
+
                 return BuildDefaultResponse(exception, exceptionContext);
             }
 
@@ -38,7 +50,7 @@ namespace CQ.ApiElements.Filters
 
             LogMessage(mapping, exception, exceptionContext);
 
-            return BuldResponse(mapping, exception, exceptionContext);
+            return BuildResponse(mapping, exception, exceptionContext);
         }
 
         protected virtual ExceptionHttpResponse BuildDefaultResponse(Exception exception, CustomExceptionContext exceptionContext)
@@ -58,7 +70,7 @@ namespace CQ.ApiElements.Filters
             Logger(log);
         }
 
-        protected virtual ExceptionHttpResponse BuldResponse(BaseExceptionMapping mapping, Exception exception, CustomExceptionContext context)
+        protected virtual ExceptionHttpResponse BuildResponse(BaseExceptionMapping mapping, Exception exception, CustomExceptionContext context)
         {
             return new ExceptionHttpResponse(
                mapping.GetResponseMessage(exception, context),
