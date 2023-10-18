@@ -10,8 +10,8 @@ namespace CQ.ApiElements.Filters
     public record ExceptionHttpResponse
     {
         public static ExceptionHttpResponse Default = new (
-            "ExceptionOccurred",
             "An exception has occurred",
+            "ExceptionOccurred",
             HttpStatusCode.InternalServerError);
 
         public string Message { get; init; }

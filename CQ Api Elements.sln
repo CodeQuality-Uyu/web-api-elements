@@ -5,7 +5,13 @@ VisualStudioVersion = 17.4.33213.308
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQ.ApiElements", "CQ.ApiElements\CQ.ApiElements.csproj", "{5A8CE710-7BEA-430A-A647-B9F61EEA73E0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CQ.ApiElements.Test", "CQ.ApiElements.Test\CQ.ApiElements.Test.csproj", "{8F7C84F9-04BA-4EB8-B28B-72AC9F4BE0EA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQ.ApiElements.Test", "CQ.ApiElements.Test\CQ.ApiElements.Test.csproj", "{8F7C84F9-04BA-4EB8-B28B-72AC9F4BE0EA}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{5AFFA186-FA55-4ECA-A6EA-0A0C9B7AD10F}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\pull-request.yml = .github\workflows\pull-request.yml
+		.github\workflows\tag.yml = .github\workflows\tag.yml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

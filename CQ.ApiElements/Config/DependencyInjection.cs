@@ -28,8 +28,11 @@ namespace CQ.ApiElements.Config
             return options;
         }
 
-        public static IServiceCollection AddHandleException<TExceptionRegistry>(this IServiceCollection services, LifeTime registryLifeTime, LifeTime storeLifeTime) 
-            where TExceptionRegistry : ExceptionRegistryService 
+        public static IServiceCollection AddHandleException<TExceptionRegistry>(
+            this IServiceCollection services,
+            LifeTime registryLifeTime = LifeTime.Scoped,
+            LifeTime storeLifeTime = LifeTime.Scoped)
+            where TExceptionRegistry : ExceptionRegistryService
         {
             services.AddService<ExceptionStoreService>(storeLifeTime);
             services.AddService<ExceptionRegistryService, TExceptionRegistry>(registryLifeTime);
@@ -38,9 +41,9 @@ namespace CQ.ApiElements.Config
         }
 
         public static IServiceCollection AddHandleException<TExceptionStore, TExceptionRegistry>(
-            this IServiceCollection services, 
-            LifeTime storeLifeTime,
-            LifeTime registryLifeTime)
+            this IServiceCollection services,
+            LifeTime storeLifeTime = LifeTime.Scoped,
+            LifeTime registryLifeTime = LifeTime.Scoped)
             where TExceptionStore : ExceptionStoreService
             where TExceptionRegistry : ExceptionRegistryService
         {
