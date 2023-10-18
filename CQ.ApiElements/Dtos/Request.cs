@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CQ.ApiElements.Dtos
 {
-    public abstract class Request<TEntity>
+    public abstract record class Request<TEntity>
     {
         public TEntity Map()
         {
