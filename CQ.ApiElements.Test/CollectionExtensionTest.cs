@@ -28,7 +28,7 @@ namespace CQ.ApiElements.Test
         public string Name { get; set; }
     }
 
-    public class UserModel : Response<User>
+    public record class UserModel : Response<User>
     {
         public int Id { get; set; }
 
