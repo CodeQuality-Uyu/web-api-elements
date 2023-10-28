@@ -34,8 +34,9 @@ namespace CQ.ApiElements.Config
             LifeTime storeLifeTime = LifeTime.Scoped)
             where TExceptionRegistry : ExceptionRegistryService
         {
-            services.AddService<ExceptionStoreService>(storeLifeTime);
-            services.AddService<ExceptionRegistryService, TExceptionRegistry>(registryLifeTime);
+            services
+                .AddService<ExceptionStoreService>(storeLifeTime)
+                .AddService<ExceptionRegistryService, TExceptionRegistry>(registryLifeTime);
 
             return services;
         }
@@ -47,8 +48,9 @@ namespace CQ.ApiElements.Config
             where TExceptionStore : ExceptionStoreService
             where TExceptionRegistry : ExceptionRegistryService
         {
-            services.AddService<ExceptionStoreService, TExceptionStore>(storeLifeTime);
-            services.AddService<ExceptionRegistryService, TExceptionRegistry>(registryLifeTime);
+            services
+                .AddService<ExceptionStoreService, TExceptionStore>(storeLifeTime)
+                .AddService<ExceptionRegistryService, TExceptionRegistry>(registryLifeTime);
 
             return services;
         }
