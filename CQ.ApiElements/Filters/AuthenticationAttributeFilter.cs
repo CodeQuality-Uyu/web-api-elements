@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace CQ.ApiElements.Filters
 {
-    public class AuthenticationFilter : Attribute, IAuthorizationFilter
+    public class AuthenticationAttributeFilter : Attribute, IAuthorizationFilter
     {
         public void OnAuthorization(AuthorizationFilterContext context)
         {
@@ -28,7 +28,7 @@ namespace CQ.ApiElements.Filters
             {
                 context.Result = BuildMissingAuthenticationResponse(ex, context);
             }
-            catch (TokenIsNotValidException ex)
+            catch (InvalidTokenException ex)
             {
                 context.Result = BuildInvalidAuthenticationFormatResponse(ex, context);
             }
@@ -60,7 +60,7 @@ namespace CQ.ApiElements.Filters
         {
             if (!this.IsFormatOfTokenValid(token))
             {
-                throw new TokenIsNotValidException();
+                throw new InvalidTokenException();
             }
         }
 
@@ -102,7 +102,7 @@ namespace CQ.ApiElements.Filters
             return context.HttpContext.Request.CreateCQErrorResponse(HttpStatusCode.Unauthorized, "Unauthenticated", $"Need to be authenticated");
         }
 
-        protected virtual IActionResult BuildInvalidAuthenticationFormatResponse(TokenIsNotValidException ex, AuthorizationFilterContext context)
+        protected virtual IActionResult BuildInvalidAuthenticationFormatResponse(InvalidTokenException ex, AuthorizationFilterContext context)
         {
             return context.HttpContext.Request.CreateCQErrorResponse(HttpStatusCode.Forbidden, "InvalidTokenFormat", $"Invalid format of token");
         }
