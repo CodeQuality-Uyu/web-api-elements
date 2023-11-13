@@ -11,37 +11,24 @@ namespace CQ.ApiElements.Filters
     {
         public void RegisterKnownExceptions(ExceptionStoreService exceptionStoreService)
         {
-            exceptionStoreService.RegisterException(
-                new DinamicExceptionMapping<ArgumentNullException>
-                (
-                    (exception, context) =>
-                    {
-                        if (string.IsNullOrEmpty(exception.Message))
-                        {
-                            return $"Missing or invalid {exception.ParamName}";
-                        }
-
-                        return exception.Message;
-                    },
-                   "InvalidArgument",
-                    HttpStatusCode.BadRequest
-                ));
-
-            exceptionStoreService.RegisterException(
-                new DinamicExceptionMapping<ArgumentException>
-                (
-                    (exception, context) =>
-                    {
-                        if (string.IsNullOrEmpty(exception.Message))
-                        {
-                            return "Invalid argument";
-                        }
-
-                        return exception.Message;
-                    },
+            exceptionStoreService
+                .AddGenericException<ArgumentException>(
                     "InvalidArgument",
-                    HttpStatusCode.BadRequest
-                ));
+                    HttpStatusCode.InternalServerError,
+                    (ArgumentException exception,
+                    ExceptionThrownContext context) => $"Invalid argument '{exception.ParamName}'. {exception.Message}")
+
+                .AddGenericException<ArgumentNullException>(
+                    "InvalidArgument",
+                    HttpStatusCode.InternalServerError,
+                    (ArgumentNullException exception,
+                    ExceptionThrownContext context) => $"Invalid argument '{exception.ParamName}'. {exception.Message}")
+
+
+                .AddGenericException<InvalidOperationException>(
+                    "InterruptedOperation",
+                    HttpStatusCode.InternalServerError,
+                    "The operation was interrupted due to an exception.");
 
             RegisterBusinessExceptions(exceptionStoreService);
         }

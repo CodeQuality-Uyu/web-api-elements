@@ -1,59 +1,67 @@
 ﻿
 
+using CQ.ApiElements.Dtos;
 using CQ.ApiElements.Filters.Extension;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.Extensions.Logging;
 
 namespace CQ.ApiElements.Filters
 {
-    public class ExceptionFilter : Attribute, IExceptionFilter
+    public class ExceptionFilter : IExceptionFilter
     {
-        private readonly ExceptionStoreService _exeptionStore;
+        private readonly ExceptionStoreService _exceptionStoreService;
 
         public ExceptionFilter(
-            ExceptionStoreService exeptionStore, 
-            ExceptionRegistryService exeptionRegistryService)
+            ExceptionStoreService exceptionStoreService,
+            ExceptionRegistryService exceptionRegistryService)
         {
-            _exeptionStore = exeptionStore;
+            this._exceptionStoreService = exceptionStoreService;
 
-            exeptionRegistryService.RegisterKnownExceptions(_exeptionStore);
+            exceptionRegistryService.RegisterKnownExceptions(exceptionStoreService);
         }
 
-        public void OnException(ExceptionContext context)
+        public virtual void OnException(ExceptionContext context)
         {
             if (context == null)
             {
                 return;
             }
 
-            var exceptionResponse = HandleException(context);
+            var response = HandleException(context);
 
-            context.Result = BuildResponse(context, exceptionResponse);
+            LogResponse(response);
+
+            context.Result = BuildResponse(response);
         }
 
-        private ExceptionHttpResponse HandleException(ExceptionContext context)
+        private ExceptionResponse HandleException(ExceptionContext context)
         {
-            var customcontext = new CustomExceptionContext(
+            var customContext = this.BuildThrownContext(context);
+
+            return this._exceptionStoreService.HandleException(customContext);
+        }
+
+        protected virtual ExceptionThrownContext BuildThrownContext(ExceptionContext context)
+        {
+            return new ExceptionThrownContext(
                 context.Exception,
-                context.RouteData.Values["controller"].ToString());
-
-            var customExceptionContext = this.BuildCustomExceptionContext(customcontext);
-
-            return this._exeptionStore.HandleException(customExceptionContext);
+                context.RouteData.Values["controller"].ToString(),
+                $"{context.HttpContext.Request.Method}-{context.HttpContext.Request.Path.ToString().Substring(1)}");
         }
 
-        protected virtual CustomExceptionContext BuildCustomExceptionContext(CustomExceptionContext context)
+        protected virtual IActionResult BuildResponse(ExceptionResponse response)
         {
-            return context;
+            return new ObjectResult(new
+            {
+                Code = response.Code,
+                Message = response.Message
+            })
+            {
+                StatusCode = (int)response.StatusCode,
+            };
         }
 
-        protected virtual IActionResult BuildResponse(ExceptionContext context, ExceptionHttpResponse error)
-        {
-            return context.HttpContext.Request.CreateCQErrorResponse(
-                    error.StatusCode,
-                    error.Code,
-                    error.Message
-                );
-        }
+        protected virtual void LogResponse(ExceptionResponse response) { }
     }
 }
