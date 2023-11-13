@@ -16,7 +16,16 @@ namespace CQ.ApiElements.Filters
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
     public class AuthenticationAsyncAttributeFilter : Attribute, IAsyncAuthorizationFilter
     {
-        public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
+        private readonly string? _permission;
+
+        public AuthenticationAsyncAttributeFilter() { }
+
+        public AuthenticationAsyncAttributeFilter(string permission)
+        {
+            _permission = permission;
+        }
+
+        public virtual async Task OnAuthorizationAsync(AuthorizationFilterContext context)
         {
             try
             {
@@ -60,24 +69,24 @@ namespace CQ.ApiElements.Filters
 
         private async Task AssertTokenFormatAsync(string token, AuthorizationFilterContext context)
         {
-            var isFormatValid = await this.IsFormatOfTokenValidAsync(token, context).ConfigureAwait(false);
-            
-            if (!isFormatValid)
+            try
             {
-                throw new InvalidTokenException();
-            }
-        }
+                var isFormatValid = await this.IsFormatOfTokenValidAsync(token, context).ConfigureAwait(false);
 
-        protected virtual bool IsFormatOfTokenValid(string token, AuthorizationFilterContext context)
-        {
-            return true;
+                if (!isFormatValid)
+                {
+                    throw new InvalidTokenException(token);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidTokenException(token, ex);
+            }
         }
 
         protected virtual Task<bool> IsFormatOfTokenValidAsync(string token, AuthorizationFilterContext context)
         {
-            var result = IsFormatOfTokenValid(token, context);
-
-            return Task.FromResult(result);
+            return Task.FromResult(true);
         }
 
         private async Task AssertUserPermissionsAsync(string token, AuthorizationFilterContext context)
@@ -90,16 +99,32 @@ namespace CQ.ApiElements.Filters
             }
         }
 
-        protected virtual (bool IsAuthorized, string Permission) IsUserAuthorized(string token, AuthorizationFilterContext context)
+        protected virtual async Task<(bool isAuthorized, string permission)> IsUserAuthorizedAsync(string token, AuthorizationFilterContext context)
         {
-            return (true, "permission");
+            var permission = this.BuildPermission(token, context);
+
+            try
+            {
+                var isAuthorized = await this.HasUserPermissionAsync(token, permission, context).ConfigureAwait(false);
+
+                return (isAuthorized, permission);
+            }
+            catch (Exception)
+            {
+                return (false, permission);
+            }
         }
 
-        protected virtual Task<(bool isAuthorized, string permission)> IsUserAuthorizedAsync(string token, AuthorizationFilterContext context)
+        protected virtual string BuildPermission(string token, AuthorizationFilterContext context)
         {
-            var result = IsUserAuthorized(token, context);
+            var permission = this._permission ?? $"{context.HttpContext.Request.Method.ToLower()}-{context.HttpContext.Request.Path.Value.Substring(1)}";
 
-            return Task.FromResult(result);
+            return permission;
+        }
+
+        protected virtual Task<bool> HasUserPermissionAsync(string token, string permission, AuthorizationFilterContext context)
+        {
+            return Task.FromResult(true);
         }
 
         protected virtual IActionResult BuildMissingAuthenticationResponse(MissingTokenException ex, AuthorizationFilterContext context)
@@ -125,6 +150,12 @@ namespace CQ.ApiElements.Filters
         protected virtual IActionResult BuildGenericResponse(AuthorizationFilterContext context)
         {
             return context.HttpContext.Request.CreateCQErrorResponse(HttpStatusCode.InternalServerError, "InternalProblem", "Problems with the server");
+        }
+
+
+        protected virtual TService GetService<TService>(AuthorizationFilterContext context)
+        {
+            return context.HttpContext.RequestServices.GetRequiredService<TService>();
         }
     }
 }

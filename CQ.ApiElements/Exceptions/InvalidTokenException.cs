@@ -6,7 +6,13 @@ using System.Threading.Tasks;
 
 namespace CQ.Api.Filters.Exceptions
 {
-    public class InvalidTokenException:Exception
+    public class InvalidTokenException : Exception
     {
+        public readonly string Token;
+
+        public InvalidTokenException(string token, Exception? inner=null):base(inner?.Message, inner)
+        {
+            Token = token;
+        }
     }
 }
