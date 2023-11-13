@@ -12,8 +12,18 @@ using System.Threading.Tasks;
 
 namespace CQ.ApiElements.Filters
 {
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
     public class AuthenticationAttributeFilter : Attribute, IAuthorizationFilter
     {
+        private readonly string? _permission;
+
+        public AuthenticationAttributeFilter() { }
+
+        public AuthenticationAttributeFilter(string permission)
+        {
+            _permission = permission;
+        }
+
         public void OnAuthorization(AuthorizationFilterContext context)
         {
             try
@@ -58,9 +68,17 @@ namespace CQ.ApiElements.Filters
 
         private void AssertTokenFormat(string token)
         {
-            if (!this.IsFormatOfTokenValid(token))
+            try
             {
-                throw new InvalidTokenException();
+
+                if (!this.IsFormatOfTokenValid(token))
+                {
+                    throw new InvalidTokenException(token);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidTokenException(token, ex);
             }
         }
 
@@ -81,21 +99,32 @@ namespace CQ.ApiElements.Filters
 
         protected virtual (bool isAuthorized, string permission) IsUserAuthorized(string token, AuthorizationFilterContext context)
         {
-            var userPermissions = this.GetUserPermissions(token);
+            var permission = this.BuildPermission(token, context);
 
-            var permission = this.MapRequestToPermission(context.HttpContext.Request);
+            try
+            {
+                var isAuthorized = this.HasUserPermission(token, permission, context);
 
-            var userHasPermission = userPermissions.Contains(permission);
-
-            return (userHasPermission, permission);
+                return (isAuthorized, permission);
+            }
+            catch (Exception)
+            {
+                return (false, permission);
+            }
         }
 
-        protected virtual List<string> GetUserPermissions(string token)
+        protected virtual string BuildPermission(string token, AuthorizationFilterContext context)
         {
-            return new List<string>() { "generic" };
+            var permission = this._permission ?? $"{context.HttpContext.Request.Method.ToLower()}-{context.HttpContext.Request.Path.Value.Substring(1)}";
+
+            return permission;
         }
 
-        protected virtual string MapRequestToPermission(HttpRequest request) { return "generic"; }
+        protected virtual bool HasUserPermission(string token, string permission, AuthorizationFilterContext context)
+        {
+            return true;
+        }
+
 
         protected virtual IActionResult BuildMissingAuthenticationResponse(MissingTokenException ex, AuthorizationFilterContext context)
         {
@@ -104,7 +133,7 @@ namespace CQ.ApiElements.Filters
 
         protected virtual IActionResult BuildInvalidAuthenticationFormatResponse(InvalidTokenException ex, AuthorizationFilterContext context)
         {
-            return context.HttpContext.Request.CreateCQErrorResponse(HttpStatusCode.Forbidden, "InvalidTokenFormat", $"Invalid format of token");
+            return context.HttpContext.Request.CreateCQErrorResponse(HttpStatusCode.Unauthorized, "InvalidToken", $"Invalid auth token provided");
         }
 
         protected virtual IActionResult BuildUnauthorizedResponse(AccessDeniedException ex, AuthorizationFilterContext context)
@@ -119,7 +148,7 @@ namespace CQ.ApiElements.Filters
 
         protected virtual IActionResult BuildGenericResponse(AuthorizationFilterContext context)
         {
-            return context.HttpContext.Request.CreateCQErrorResponse(HttpStatusCode.InternalServerError, "InternalProblem", "Problems with the server");
+            return context.HttpContext.Request.CreateCQErrorResponse(HttpStatusCode.InternalServerError, "ExceptionOccured", "An unpredicted exception ocurred");
         }
     }
 }

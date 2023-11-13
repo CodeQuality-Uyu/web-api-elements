@@ -8,7 +8,7 @@ namespace CQ.Api.Filters.Exceptions
 {
     public class AccessDeniedException : Exception
     {
-        public string Permission { get; set; }
+        public readonly string Permission;
 
         public AccessDeniedException(string permission) { this.Permission = permission; }
     }

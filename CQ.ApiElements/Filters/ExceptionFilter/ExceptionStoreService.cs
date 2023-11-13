@@ -12,86 +12,142 @@ namespace CQ.ApiElements.Filters
 {
     public class ExceptionStoreService
     {
-        private readonly Dictionary<Type, ExceptionMappings> Mappings;
+        private readonly IDictionary<OriginError, ExceptionsOfOrigin> _specificExceptions = new Dictionary<OriginError, ExceptionsOfOrigin>();
 
-        private Action<Log>? Logger;
+        private readonly IDictionary<Type, ExceptionResponse> _genericExceptions = new Dictionary<Type, ExceptionResponse>();
 
-        private Action<Exception>? LoggerException;
-
-        public ExceptionStoreService()
+        public virtual ExceptionsOfOrigin AddOriginExceptions(OriginError error)
         {
-            Mappings = new Dictionary<Type, ExceptionMappings>();
+            if (this._specificExceptions.ContainsKey(error)) return this._specificExceptions[error];
+
+            var exceptionsOfOrigin = new ExceptionsOfOrigin();
+
+            this._specificExceptions.Add(error, exceptionsOfOrigin);
+
+            return exceptionsOfOrigin;
         }
 
-        public void AddLogger(Action<Log> logger)
+        public virtual ExceptionStoreService AddGenericException<TException>(
+            string code,
+            HttpStatusCode statusCode,
+            Func<TException, ExceptionThrownContext, string> messageFunction,
+            Func<TException, ExceptionThrownContext, string>? logMessageFunction = null)
+            where TException : Exception
         {
-            Logger = logger;
+            if (this._genericExceptions.ContainsKey(typeof(TException))) return this;
+
+            this._genericExceptions.Add(
+                typeof(TException),
+                new DinamicExceptionResponse<TException>(
+                    code,
+                    statusCode,
+                    messageFunction,
+                    logMessageFunction));
+
+            return this;
         }
 
-        public void AddLoggerUnhandleException(Action<Exception> logger)
+        public virtual ExceptionStoreService AddGenericException<TException>(
+           Func<TException, ExceptionThrownContext, string> codeFunction,
+           HttpStatusCode statusCode,
+           Func<TException, ExceptionThrownContext, string> messageFunction,
+           Func<TException, ExceptionThrownContext, string>? logMessageFunction = null)
+           where TException : Exception
         {
-            LoggerException = logger;
+            if (this._genericExceptions.ContainsKey(typeof(TException))) return this;
+
+            this._genericExceptions.Add(
+                typeof(TException),
+                new DinamicExceptionResponse<TException>(
+                    codeFunction,
+                    statusCode,
+                    messageFunction,
+                    logMessageFunction));
+
+            return this;
         }
 
-        internal ExceptionHttpResponse HandleException(CustomExceptionContext exceptionContext)
+        public virtual ExceptionStoreService AddGenericException<TException>(
+            string code,
+            HttpStatusCode statusCode,
+            string message,
+            string? logMessage = null)
+            where TException : Exception
         {
-            Exception exception = exceptionContext.Exception;
-            if (!Mappings.ContainsKey(exception.GetType()))
+            if (this._genericExceptions.ContainsKey(typeof(TException))) return this;
+
+            this._genericExceptions.Add(
+                typeof(TException),
+                new ExceptionResponse(
+                    code,
+                    statusCode,
+                    message,
+                    logMessage));
+
+            return this;
+        }
+
+        public virtual ExceptionResponse HandleException(ExceptionThrownContext context)
+        {
+            var exception = this.HandleSpecificException(context);
+
+            exception ??= this.HandleTypeException(context);
+
+            exception ??= new("ExceptionOccured", HttpStatusCode.InternalServerError, "An unpredicted exception ocurred");
+
+            return exception;
+        }
+
+        private ExceptionResponse? HandleSpecificException(ExceptionThrownContext context)
+        {
+            var exception = context.Exception;
+            var originError = new OriginError(context.ControllerName, context.Action);
+            if (!this._specificExceptions.ContainsKey(originError))
             {
-                if(LoggerException!= null)
-                {
-                    LoggerException(exception);
-                }
-
-                return BuildDefaultResponse(exception, exceptionContext);
+                return null;
             }
 
-            var mapping = Mappings[exception.GetType()].GetMapping(exceptionContext.ControllerName);
+            var originErrorFound = this._specificExceptions[originError];
 
-            LogMessage(mapping, exception, exceptionContext);
-
-            return BuildResponse(mapping, exception, exceptionContext);
-        }
-
-        protected virtual ExceptionHttpResponse BuildDefaultResponse(Exception exception, CustomExceptionContext exceptionContext)
-        {
-            return ExceptionHttpResponse.Default;
-        }
-
-        private void LogMessage(BaseExceptionMapping mapping, Exception exception, CustomExceptionContext exceptionContext)
-        {
-            var log = mapping.GetLog(exception, exceptionContext);
-
-            if (log == null || Logger == null)
+            if (!originErrorFound.Exceptions.ContainsKey(exception.GetType()))
             {
-                return;
+                return null;
             }
 
-            Logger(log);
+            var mapping = originErrorFound.Exceptions[exception.GetType()];
+
+            mapping.SetContext(context);
+
+            return mapping;
         }
 
-        protected virtual ExceptionHttpResponse BuildResponse(BaseExceptionMapping mapping, Exception exception, CustomExceptionContext context)
+        private ExceptionResponse? HandleTypeException(ExceptionThrownContext context)
         {
-            return new ExceptionHttpResponse(
-               mapping.GetResponseMessage(exception, context),
-               mapping.ResponseCode,
-                mapping.ResponseStatusCode);
+            var exception = context.Exception;
+            var registeredType = this.GetRegisteredType(exception.GetType());
+
+            if (registeredType == null) return null;
+
+            var mapping = this._genericExceptions[registeredType];
+
+            mapping.SetContext(context);
+
+            return mapping;
         }
 
-        public void RegisterException(BaseExceptionMapping exception)
+        private Type? GetRegisteredType(Type initialType)
         {
-            var exceptionType = exception.GetTypeRegistered();
-
-            if (Mappings.ContainsKey(exceptionType))
+            if (initialType == typeof(Exception))
             {
-                var exceptions = Mappings[exceptionType];
-
-                exceptions.AddMapping(exception);
-                return;
+                return null;
             }
 
-            var exceptionMappings = new ExceptionMappings(exception);
-            Mappings.Add(exceptionType, exceptionMappings);
+            if (!this._genericExceptions.ContainsKey(initialType))
+            {
+                return this.GetRegisteredType(initialType.BaseType ?? typeof(Exception));
+            }
+
+            return initialType;
         }
     }
 }

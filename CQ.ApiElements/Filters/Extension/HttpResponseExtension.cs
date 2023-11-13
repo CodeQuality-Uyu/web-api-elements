@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace CQ.ApiElements.Filters.Extension
 {
-    internal static class HttpResponseExtension
+    public static class HttpResponseExtension
     {
         public static IActionResult CreateCQErrorResponse(this HttpRequest request, HttpStatusCode statusCode, string code, string message)
         {
