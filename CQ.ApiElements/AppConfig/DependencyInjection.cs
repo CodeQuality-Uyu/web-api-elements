@@ -9,7 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CQ.ApiElements.Config
+namespace CQ.ApiElements.AppConfig
 {
     public static class DependencyInjection
     {
