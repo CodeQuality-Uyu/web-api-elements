@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CQ.ApiElements.Exceptions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,9 +11,16 @@ namespace CQ.ApiElements.Dtos
     {
         public TEntity Map()
         {
-            Assert();
+            try
+            {
+                Assert();
 
-            return InnerMap();
+                return InnerMap();
+            }
+            catch(ArgumentException ex)
+            {
+                throw new InvalidRequestException(ex.ParamName, ex.Source, ex);
+            }
         }
 
         protected virtual void Assert() { }
