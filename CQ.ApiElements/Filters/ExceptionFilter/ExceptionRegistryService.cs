@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CQ.ApiElements.Exceptions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -28,7 +29,14 @@ namespace CQ.ApiElements.Filters
                 .AddGenericException<InvalidOperationException>(
                     "InterruptedOperation",
                     HttpStatusCode.InternalServerError,
-                    "The operation was interrupted due to an exception.");
+                    "The operation was interrupted due to an exception.")
+
+                .AddGenericException<InvalidRequestException>(
+                "InvalidRequest",
+                HttpStatusCode.BadRequest,
+                (exception, context) => $"Invalid argument '{exception.Prop}'. {exception.InnerException.Message}",
+                (exception, context) => $"Invalid argument '{exception.Prop}' with value '{exception.Source}'. {exception.InnerException.Message}"
+                );
 
             RegisterBusinessExceptions(exceptionStoreService);
         }
