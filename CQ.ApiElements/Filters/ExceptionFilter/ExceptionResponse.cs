@@ -9,15 +9,17 @@ namespace CQ.ApiElements.Filters
 {
     public record class ExceptionResponse
     {
-        public string Code;
+        public string Code { get; protected set; } = null!;
 
-        public string Message { get; protected set; }
+        public string Message { get; protected set; } = null!;
 
-        public string LogMessage { get; protected set; }
+        public string LogMessage { get; protected set; } = null!;
 
-        public readonly HttpStatusCode StatusCode;
+        public HttpStatusCode StatusCode { get; protected set; }
 
-        public ExceptionThrownContext? Context;
+        public ExceptionThrownContext Context { get; protected set; } = null!;
+
+        public ExceptionResponse() { }
 
         public ExceptionResponse(
             string code,

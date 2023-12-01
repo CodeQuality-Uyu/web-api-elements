@@ -45,9 +45,10 @@ namespace CQ.ApiElements.Filters
         protected virtual ExceptionThrownContext BuildThrownContext(ExceptionContext context)
         {
             return new ExceptionThrownContext(
+                context,
                 context.Exception,
                 context.RouteData.Values["controller"].ToString(),
-                $"{context.HttpContext.Request.Method}-{context.HttpContext.Request.Path.ToString().Substring(1)}");
+                context.RouteData.Values["action"].ToString());
         }
 
         protected virtual IActionResult BuildResponse(ExceptionResponse response)
