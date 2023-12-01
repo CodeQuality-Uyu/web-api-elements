@@ -40,19 +40,5 @@ namespace CQ.ApiElements.AppConfig
 
             return services;
         }
-
-        public static IServiceCollection AddHandleException<TExceptionStore, TExceptionRegistry>(
-            this IServiceCollection services,
-            LifeTime storeLifeTime = LifeTime.Scoped,
-            LifeTime registryLifeTime = LifeTime.Scoped)
-            where TExceptionStore : ExceptionStoreService
-            where TExceptionRegistry : ExceptionRegistryService
-        {
-            services
-                .AddService<ExceptionStoreService, TExceptionStore>(storeLifeTime)
-                .AddService<ExceptionRegistryService, TExceptionRegistry>(registryLifeTime);
-
-            return services;
-        }
     }
 }
