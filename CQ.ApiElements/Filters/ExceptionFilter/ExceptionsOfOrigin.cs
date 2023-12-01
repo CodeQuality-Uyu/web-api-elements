@@ -7,11 +7,31 @@ using System.Threading.Tasks;
 
 namespace CQ.ApiElements.Filters
 {
-    public record class ExceptionsOfOrigin
+    public sealed record class ExceptionsOfOrigin
     {
         public readonly IDictionary<Type, ExceptionResponse> Exceptions = new Dictionary<Type, ExceptionResponse>();
 
-        public virtual ExceptionsOfOrigin AddException<TException>(
+        public ExceptionsOfOrigin AddException<TException>(
+            string code,
+            HttpStatusCode statusCode,
+            string message,
+            string? logMessage = null)
+            where TException : Exception
+        {
+            if (this.Exceptions.ContainsKey(typeof(TException))) return this;
+
+            this.Exceptions.Add(
+                typeof(TException),
+                new ExceptionResponse(
+                    code,
+                    statusCode,
+                    message,
+                    logMessage));
+
+            return this;
+        }
+
+        public ExceptionsOfOrigin AddException<TException>(
             string code,
             HttpStatusCode statusCode,
             Func<TException, ExceptionThrownContext, string> messageFunction,
@@ -31,22 +51,16 @@ namespace CQ.ApiElements.Filters
             return this;
         }
 
-        public virtual ExceptionsOfOrigin AddException<TException>(
-            string code,
-            HttpStatusCode statusCode,
-            string message,
-            string? logMessage = null)
+
+        public ExceptionsOfOrigin AddException<TException>(
+            Func<TException, ExceptionThrownContext, (string code, HttpStatusCode statusCode, string message, string? logMessage)> function)
             where TException : Exception
         {
             if (this.Exceptions.ContainsKey(typeof(TException))) return this;
 
             this.Exceptions.Add(
                 typeof(TException),
-                new ExceptionResponse(
-                    code,
-                    statusCode,
-                    message,
-                    logMessage));
+                new DinamicExceptionResponse<TException>(function));
 
             return this;
         }
