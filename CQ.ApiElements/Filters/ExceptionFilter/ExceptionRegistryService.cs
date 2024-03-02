@@ -1,4 +1,4 @@
-﻿using CQ.ApiElements.Exceptions;
+﻿using CQ.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Linq;

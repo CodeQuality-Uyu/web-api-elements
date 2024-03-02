@@ -4,7 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CQ.Api.Filters.Exceptions
+namespace CQ.ApiElements
 {
-    public class MissingTokenException : Exception { }
+    public enum ContextItems
+    {
+        AccountLogged
+    }
 }

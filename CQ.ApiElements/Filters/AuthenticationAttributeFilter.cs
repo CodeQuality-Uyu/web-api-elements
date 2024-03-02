@@ -1,5 +1,5 @@
-﻿using CQ.Api.Filters.Exceptions;
-using CQ.ApiElements.Filters.Extension;
+﻿using CQ.ApiElements.Filters.Extensions;
+using CQ.Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -70,7 +70,6 @@ namespace CQ.ApiElements.Filters
         {
             try
             {
-
                 if (!this.IsFormatOfTokenValid(token))
                 {
                     throw new InvalidTokenException(token);
@@ -115,16 +114,13 @@ namespace CQ.ApiElements.Filters
 
         protected virtual string BuildPermission(string token, AuthorizationFilterContext context)
         {
-            var permission = this._permission ?? $"{context.HttpContext.Request.Method.ToLower()}-{context.HttpContext.Request.Path.Value.Substring(1)}";
-
-            return permission;
+            return _permission ?? $"{context.RouteData.Values["action"].ToString().ToLower()}-{context.RouteData.Values["controller"].ToString().ToLower()}";
         }
 
         protected virtual bool HasUserPermission(string token, string permission, AuthorizationFilterContext context)
         {
             return true;
         }
-
 
         protected virtual IActionResult BuildMissingAuthenticationResponse(MissingTokenException ex, AuthorizationFilterContext context)
         {

@@ -19,7 +19,9 @@ namespace CQ.ApiElements.Filters
 
         public ExceptionThrownContext Context { get; protected set; } = null!;
 
-        public ExceptionResponse() { }
+        public ExceptionResponse() 
+        {
+        }
 
         public ExceptionResponse(
             string code,

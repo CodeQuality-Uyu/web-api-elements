@@ -47,8 +47,8 @@ namespace CQ.ApiElements.Filters
             return new ExceptionThrownContext(
                 context,
                 context.Exception,
-                context.RouteData.Values["controller"].ToString(),
-                context.RouteData.Values["action"].ToString());
+                context.RouteData.Values["controller"].ToString()!,
+                context.RouteData.Values["action"].ToString()!);
         }
 
         protected virtual IActionResult BuildResponse(ExceptionResponse response)

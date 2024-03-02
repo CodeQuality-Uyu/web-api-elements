@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CQ.ApiElements.Exceptions
+namespace CQ.Exceptions
 {
     public class InvalidRequestException : Exception
     {
@@ -15,7 +15,8 @@ namespace CQ.ApiElements.Exceptions
         public InvalidRequestException(
             string prop,
             string value,
-            Exception inner) : base(inner.Message, inner)
+            Exception? inner = null) 
+            : base(inner?.Message, inner)
         {
             Prop = prop;
             Value = value;

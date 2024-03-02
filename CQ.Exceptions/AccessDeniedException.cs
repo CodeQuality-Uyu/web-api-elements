@@ -4,12 +4,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CQ.Api.Filters.Exceptions
+namespace CQ.Exceptions
 {
     public class AccessDeniedException : Exception
     {
         public readonly string Permission;
 
-        public AccessDeniedException(string permission) { this.Permission = permission; }
+        public AccessDeniedException(string permission)
+        { 
+            this.Permission = permission; 
+        }
     }
 }

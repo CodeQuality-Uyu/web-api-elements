@@ -7,7 +7,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CQ.ApiElements.Filters.Extension
+namespace CQ.ApiElements.Filters.Extensions
 {
     public static class HttpResponseExtension
     {

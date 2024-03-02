@@ -7,5 +7,9 @@ using System.Threading.Tasks;
 
 namespace CQ.ApiElements.Filters
 {
-    public record class ExceptionThrownContext(ExceptionContext Context, Exception Exception, string ControllerName, string Action);
+    public record class ExceptionThrownContext(
+        ExceptionContext ExceptionContext,
+        Exception Exception,
+        string ControllerName,
+        string Action);
 }

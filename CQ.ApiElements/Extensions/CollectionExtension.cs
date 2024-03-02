@@ -1,15 +1,10 @@
 ﻿using CQ.ApiElements.Dtos;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace CQ.ApiElements.Filters.Extension
+namespace CQ.ApiElements.Extensions
 {
     public static class CollectionExtension
     {
-        public static IList<TResult> MapTo<TResult, TEntity>(this IList<TEntity> collection)
+        public static List<TResult> MapTo<TResult, TEntity>(this List<TEntity> collection)
             where TEntity : class
             where TResult : Response<TEntity>
         {

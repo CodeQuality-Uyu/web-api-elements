@@ -1,5 +1,5 @@
 using CQ.ApiElements.Dtos;
-using CQ.ApiElements.Filters.Extension;
+using CQ.ApiElements.Extensions;
 
 namespace CQ.ApiElements.Test
 {

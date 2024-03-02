@@ -1,15 +1,9 @@
-﻿using CQ.Api.Filters.Exceptions;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc.Filters;
+﻿using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
-using CQ.ApiElements.Filters.Extension;
 using Microsoft.Extensions.DependencyInjection;
+using CQ.Exceptions;
+using CQ.ApiElements.Filters.Extensions;
 
 namespace CQ.ApiElements.Filters
 {
@@ -32,6 +26,10 @@ namespace CQ.ApiElements.Filters
                 var token = context.HttpContext.Request.Headers["Authorization"];
 
                 await AssertTokenAsync(token, context).ConfigureAwait(false);
+
+                var accountLogged = await GetAccountByTokenAsync(token, context).ConfigureAwait(false);
+
+                context.HttpContext.Items[ContextItems.AccountLogged] = accountLogged;
 
                 await AssertUserPermissionsAsync(token, context).ConfigureAwait(false);
             }
@@ -69,18 +67,19 @@ namespace CQ.ApiElements.Filters
 
         private async Task AssertTokenFormatAsync(string token, AuthorizationFilterContext context)
         {
+            bool isFormatValid;
             try
             {
-                var isFormatValid = await this.IsFormatOfTokenValidAsync(token, context).ConfigureAwait(false);
-
-                if (!isFormatValid)
-                {
-                    throw new InvalidTokenException(token);
-                }
+                isFormatValid = await this.IsFormatOfTokenValidAsync(token, context).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
                 throw new InvalidTokenException(token, ex);
+            }
+
+            if (!isFormatValid)
+            {
+                throw new InvalidTokenException(token);
             }
         }
 
@@ -117,9 +116,7 @@ namespace CQ.ApiElements.Filters
 
         protected virtual string BuildPermission(string token, AuthorizationFilterContext context)
         {
-            var permission = this._permission ?? $"{context.HttpContext.Request.Method.ToLower()}-{context.HttpContext.Request.Path.Value.Substring(1)}";
-
-            return permission;
+            return _permission ?? $"{context.RouteData.Values["action"].ToString().ToLower()}-{context.RouteData.Values["controller"].ToString().ToLower()}";
         }
 
         protected virtual Task<bool> HasUserPermissionAsync(string token, string permission, AuthorizationFilterContext context)
@@ -127,6 +124,12 @@ namespace CQ.ApiElements.Filters
             return Task.FromResult(true);
         }
 
+        protected virtual Task<object> GetAccountByTokenAsync(string token, AuthorizationFilterContext context)
+        {
+            return Task.FromResult<object>(null);
+        }
+
+        #region Build responses
         protected virtual IActionResult BuildMissingAuthenticationResponse(MissingTokenException ex, AuthorizationFilterContext context)
         {
             return context.HttpContext.Request.CreateCQErrorResponse(HttpStatusCode.Unauthorized, "Unauthenticated", $"Need to be authenticated");
@@ -152,6 +155,7 @@ namespace CQ.ApiElements.Filters
             return context.HttpContext.Request.CreateCQErrorResponse(HttpStatusCode.InternalServerError, "InternalProblem", "Problems with the server");
         }
 
+        #endregion
 
         protected virtual TService GetService<TService>(AuthorizationFilterContext context)
         {

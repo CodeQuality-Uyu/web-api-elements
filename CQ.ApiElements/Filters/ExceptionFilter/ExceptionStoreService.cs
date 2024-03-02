@@ -129,6 +129,8 @@ namespace CQ.ApiElements.Filters
 
             exception ??= new("ExceptionOccured", HttpStatusCode.InternalServerError, "An unpredicted exception ocurred");
 
+            exception.SetContext(context);
+
             return exception;
         }
 
@@ -137,20 +139,14 @@ namespace CQ.ApiElements.Filters
             var exception = context.Exception;
             var originError = new OriginError(context.ControllerName, context.Action);
             if (!this.SpecificExceptions.ContainsKey(originError))
-            {
                 return null;
-            }
 
             var originErrorFound = this.SpecificExceptions[originError];
 
             if (!originErrorFound.Exceptions.ContainsKey(exception.GetType()))
-            {
                 return null;
-            }
 
             var mapping = originErrorFound.Exceptions[exception.GetType()];
-
-            mapping.SetContext(context);
 
             return mapping;
         }
@@ -160,11 +156,10 @@ namespace CQ.ApiElements.Filters
             var exception = context.Exception;
             var registeredType = this.GetRegisteredType(exception.GetType());
 
-            if (registeredType == null) return null;
+            if (registeredType == null)
+                return null;
 
             var mapping = this.GenericExceptions[registeredType];
-
-            mapping.SetContext(context);
 
             return mapping;
         }
