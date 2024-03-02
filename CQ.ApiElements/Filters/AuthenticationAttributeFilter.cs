@@ -3,6 +3,7 @@ using CQ.Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,7 +31,16 @@ namespace CQ.ApiElements.Filters
             {
                 var token = context.HttpContext.Request.Headers["Authorization"];
 
-                AssertToken(token);
+                AssertToken(token, context);
+
+                var accountLogged = context.HttpContext.Items[ContextItems.AccountLogged];
+
+                if (accountLogged == null)
+                {
+                    accountLogged = GetAccountByToken(token, context);
+
+                    context.HttpContext.Items[ContextItems.AccountLogged] = accountLogged;
+                }
 
                 AssertUserPermissions(token, context);
             }
@@ -56,32 +66,41 @@ namespace CQ.ApiElements.Filters
             }
         }
 
-        private void AssertToken(string? token)
+        private void AssertToken(string? token, AuthorizationFilterContext context)
         {
-            if (string.IsNullOrEmpty(token))
-            {
-                throw new MissingTokenException();
-            }
+            if (AccountIsLogged(context))
+                return;
 
-            this.AssertTokenFormat(token);
+            if (string.IsNullOrEmpty(token))
+                throw new MissingTokenException();
+
+            this.AssertTokenFormat(token, context);
         }
 
-        private void AssertTokenFormat(string token)
+        private bool AccountIsLogged(AuthorizationFilterContext context)
         {
+            return context.HttpContext.Items[ContextItems.AccountLogged] != null;
+        }
+
+        private void AssertTokenFormat(string token, AuthorizationFilterContext context)
+        {
+            bool isFormatValid;
             try
             {
-                if (!this.IsFormatOfTokenValid(token))
-                {
-                    throw new InvalidTokenException(token);
-                }
+                isFormatValid = this.IsFormatOfTokenValid(token, context);
             }
             catch (Exception ex)
             {
                 throw new InvalidTokenException(token, ex);
             }
+
+            if (!isFormatValid)
+            {
+                throw new InvalidTokenException(token);
+            }
         }
 
-        protected virtual bool IsFormatOfTokenValid(string token)
+        protected virtual bool IsFormatOfTokenValid(string token, AuthorizationFilterContext context)
         {
             return true;
         }
@@ -122,6 +141,13 @@ namespace CQ.ApiElements.Filters
             return true;
         }
 
+        protected virtual object GetAccountByToken(string token, AuthorizationFilterContext context)
+        {
+            return null;
+        }
+
+
+        #region Build response
         protected virtual IActionResult BuildMissingAuthenticationResponse(MissingTokenException ex, AuthorizationFilterContext context)
         {
             return context.HttpContext.Request.CreateCQErrorResponse(HttpStatusCode.Unauthorized, "Unauthenticated", $"Need to be authenticated");
@@ -145,6 +171,12 @@ namespace CQ.ApiElements.Filters
         protected virtual IActionResult BuildGenericResponse(AuthorizationFilterContext context)
         {
             return context.HttpContext.Request.CreateCQErrorResponse(HttpStatusCode.InternalServerError, "ExceptionOccured", "An unpredicted exception ocurred");
+        }
+        #endregion
+
+        protected virtual TService GetService<TService>(AuthorizationFilterContext context)
+        {
+            return context.HttpContext.RequestServices.GetRequiredService<TService>();
         }
     }
 }

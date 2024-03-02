@@ -1,10 +1,7 @@
 ﻿
 
-using CQ.ApiElements.Dtos;
-using CQ.ApiElements.Filters.Extension;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.Extensions.Logging;
 
 namespace CQ.ApiElements.Filters
 {

@@ -1,14 +1,14 @@
 ﻿using CQ.ApiElements.Filters.Exceptions;
-using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.Http;
 
 namespace CQ.ApiElements.Filters.Extensions
 {
-    public static class AuthorizationFilterContextExtension
+    public static class HttpContextExtension
     {
-        public static TResult GetItem<TResult>(this AuthorizationFilterContext context, ContextItems item) 
+        public static TResult GetItem<TResult>(this HttpContext context, ContextItems item) 
             where TResult : class
         {
-            var element = context.HttpContext.Items[item];
+            var element = context.Items[item];
 
             if (element == null)
                 throw new ContextItemNotFoundException(item);

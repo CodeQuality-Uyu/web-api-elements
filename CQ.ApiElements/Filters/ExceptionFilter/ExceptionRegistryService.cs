@@ -13,6 +13,16 @@ namespace CQ.ApiElements.Filters
         public void RegisterKnownExceptions(ExceptionStoreService exceptionStoreService)
         {
             exceptionStoreService
+                .AddGenericException<ResourceNotFoundException>(
+                "ResourceNotFound",
+                HttpStatusCode.NotFound,
+                (exception, context) => $"Resource: {exception.Resource} was not found with parameters: {string.Join(", ", exception.Parameters)}")
+
+                .AddGenericException<ResourceDuplicatedException>(
+                "ResourceDuplicated",
+                HttpStatusCode.Conflict,
+                (exception, context) => $"Resource: {exception.Resource} is duplicated with parameters: {string.Join(", ", exception.Parameters)}")
+
                 .AddGenericException<ArgumentException>(
                     "InvalidArgument",
                     HttpStatusCode.InternalServerError,
@@ -33,7 +43,7 @@ namespace CQ.ApiElements.Filters
                 "InvalidRequest",
                 HttpStatusCode.BadRequest,
                 (exception, context) => $"Invalid argument '{exception.Prop}'. {exception.InnerException.Message}",
-                (exception, context) => $"Invalid argument '{exception.Prop}' with value '{exception.Source}'. {exception.InnerException.Message}"
+                (exception, context) => $"Invalid argument '{exception.Prop}' with value '{exception.Value}'. {exception.InnerException.Message}"
                 );
 
             RegisterBusinessExceptions(exceptionStoreService);

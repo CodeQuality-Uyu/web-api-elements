@@ -27,9 +27,14 @@ namespace CQ.ApiElements.Filters
 
                 await AssertTokenAsync(token, context).ConfigureAwait(false);
 
-                var accountLogged = await GetAccountByTokenAsync(token, context).ConfigureAwait(false);
+                var accountLogged = context.HttpContext.Items[ContextItems.AccountLogged];
 
-                context.HttpContext.Items[ContextItems.AccountLogged] = accountLogged;
+                if (accountLogged == null)
+                {
+                    accountLogged = await GetAccountByTokenAsync(token, context).ConfigureAwait(false);
+
+                    context.HttpContext.Items[ContextItems.AccountLogged] = accountLogged;
+                }
 
                 await AssertUserPermissionsAsync(token, context).ConfigureAwait(false);
             }
@@ -57,12 +62,20 @@ namespace CQ.ApiElements.Filters
 
         private async Task AssertTokenAsync(string? token, AuthorizationFilterContext context)
         {
+            if (AccountIsLogged(context))
+                return;
+
             if (string.IsNullOrEmpty(token))
             {
                 throw new MissingTokenException();
             }
 
             await this.AssertTokenFormatAsync(token, context).ConfigureAwait(false);
+        }
+
+        private bool AccountIsLogged(AuthorizationFilterContext context)
+        {
+            return context.HttpContext.Items[ContextItems.AccountLogged] != null;
         }
 
         private async Task AssertTokenFormatAsync(string token, AuthorizationFilterContext context)

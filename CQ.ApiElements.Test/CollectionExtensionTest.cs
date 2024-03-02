@@ -32,11 +32,9 @@ namespace CQ.ApiElements.Test
     {
         public int Id { get; set; }
 
-        public UserModel(User u) : base(u) { }
-
-        protected override void Map(User entity)
-        {
-            Id = entity.Id;
+        public UserModel(User u) : base(u) 
+        { 
+            Id = u.Id;
         }
     }
 }
