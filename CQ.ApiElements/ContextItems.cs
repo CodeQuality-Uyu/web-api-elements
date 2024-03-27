@@ -8,6 +8,7 @@ namespace CQ.ApiElements
 {
     public enum ContextItems
     {
-        AccountLogged
+        AccountLogged,
+        ClientSystemLogged
     }
 }
