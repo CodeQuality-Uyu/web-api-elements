@@ -33,7 +33,6 @@ namespace CQ.ApiElements.Filters
                     HttpStatusCode.InternalServerError,
                     (exception, context) => $"Invalid argument '{exception.ParamName}'. {exception.Message}")
 
-
                 .AddGenericException<InvalidOperationException>(
                     "InterruptedOperation",
                     HttpStatusCode.InternalServerError,

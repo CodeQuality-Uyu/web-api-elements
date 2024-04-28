@@ -1,4 +1,5 @@
 ﻿using CQ.ApiElements.Filters.Exceptions;
+using CQ.Utility;
 using Microsoft.AspNetCore.Http;
 
 namespace CQ.ApiElements.Filters.Extensions
@@ -10,8 +11,10 @@ namespace CQ.ApiElements.Filters.Extensions
         {
             var element = context.Items[item];
 
-            if (element == null)
+            if (Guard.IsNull(element))
+            {
                 throw new ContextItemNotFoundException(item);
+            }
 
             return (TResult) element;
         }

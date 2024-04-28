@@ -16,5 +16,10 @@
                   typeof(TResource).Name)
         {
         }
+
+        public static void Throw(string parameter, string value)
+        {
+            throw new SpecificResourceNotFoundException<TResource>(parameter, value);
+        }
     }
 }

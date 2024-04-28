@@ -1,13 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Reflection.Metadata.Ecma335;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Net;
 
 namespace CQ.ApiElements.Filters
 {
@@ -19,7 +10,10 @@ namespace CQ.ApiElements.Filters
 
         public ExceptionsOfOrigin AddOriginExceptions(OriginError error)
         {
-            if (this.SpecificExceptions.ContainsKey(error)) return this.SpecificExceptions[error];
+            if (this.SpecificExceptions.ContainsKey(error))
+            {
+                return this.SpecificExceptions[error];
+            }
 
             var exceptionsOfOrigin = new ExceptionsOfOrigin();
 
@@ -35,7 +29,10 @@ namespace CQ.ApiElements.Filters
             string? logMessage = null)
             where TException : Exception
         {
-            if (this.GenericExceptions.ContainsKey(typeof(TException))) return this;
+            if (this.GenericExceptions.ContainsKey(typeof(TException)))
+            {
+                return this;
+            }
 
             this.GenericExceptions.Add(
                 typeof(TException),
@@ -55,7 +52,10 @@ namespace CQ.ApiElements.Filters
             Func<TException, ExceptionThrownContext, string>? logMessageFunction = null)
             where TException : Exception
         {
-            if (this.GenericExceptions.ContainsKey(typeof(TException))) return this;
+            if (this.GenericExceptions.ContainsKey(typeof(TException)))
+            {
+                return this;
+            }
 
             this.GenericExceptions.Add(
                 typeof(TException),
@@ -75,7 +75,10 @@ namespace CQ.ApiElements.Filters
            Func<TException, ExceptionThrownContext, string>? logMessageFunction = null)
            where TException : Exception
         {
-            if (this.GenericExceptions.ContainsKey(typeof(TException))) return this;
+            if (this.GenericExceptions.ContainsKey(typeof(TException)))
+            {
+                return this;
+            }
 
             this.GenericExceptions.Add(
                 typeof(TException),
@@ -95,7 +98,10 @@ namespace CQ.ApiElements.Filters
            Func<TException, ExceptionThrownContext, string>? logMessageFunction = null)
            where TException : Exception
         {
-            if (this.GenericExceptions.ContainsKey(typeof(TException))) return this;
+            if (this.GenericExceptions.ContainsKey(typeof(TException)))
+            {
+                return this;
+            }
 
             this.GenericExceptions.Add(
                 typeof(TException),
@@ -112,7 +118,10 @@ namespace CQ.ApiElements.Filters
             Func<TException, ExceptionThrownContext, (string code, HttpStatusCode statusCode, string message, string? logMessage)> function)
            where TException : Exception
         {
-            if(this.GenericExceptions.ContainsKey(typeof(TException))) return this;
+            if (this.GenericExceptions.ContainsKey(typeof(TException)))
+            {
+                return this;
+            }
 
             this.GenericExceptions.Add(
                 typeof(TException),
@@ -157,7 +166,9 @@ namespace CQ.ApiElements.Filters
             var registeredType = this.GetRegisteredType(exception.GetType());
 
             if (registeredType == null)
+            {
                 return null;
+            }
 
             var mapping = this.GenericExceptions[registeredType];
 

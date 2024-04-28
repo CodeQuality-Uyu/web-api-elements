@@ -21,5 +21,10 @@ namespace CQ.ApiElements.Filters.Exceptions
             Header = header;
             Value = value;
         }
+
+        public static void Throw(string header, string value)
+        {
+            throw new ExpiredHeaderException(header, value);
+        }
     }
 }

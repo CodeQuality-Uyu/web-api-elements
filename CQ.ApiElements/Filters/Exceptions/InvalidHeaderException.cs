@@ -21,5 +21,10 @@ namespace CQ.Exceptions
             Header = header;
             Value = value;
         }
+
+        public static void Throw(string value, string header)
+        {
+            throw new InvalidHeaderException(value, header);
+        }
     }
 }

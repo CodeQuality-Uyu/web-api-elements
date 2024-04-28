@@ -14,5 +14,10 @@ namespace CQ.ApiElements.Filters.Exceptions
         {
             this.Item = item;
         }
+
+        public static void Throw(ContextItems item)
+        {
+            throw new ContextItemNotFoundException(item);
+        }
     }
 }

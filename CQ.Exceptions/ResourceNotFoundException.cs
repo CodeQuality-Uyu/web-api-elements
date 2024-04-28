@@ -2,11 +2,11 @@
 {
     public abstract class ResourceNotFoundException : Exception
     {
+        public readonly string Resource;
+
         public readonly List<string> Parameters;
 
         public readonly List<string> Values;
-
-        public readonly string Resource;
 
         public ResourceNotFoundException(
             List<string> parameters,

@@ -22,5 +22,10 @@
                   typeof(TResource).Name)
         {
         }
+
+        public static void Throw(string parameter, string value)
+        {
+            throw new SpecificResourceDuplicatedException<TResource>(parameter, value);
+        }
     }
 }

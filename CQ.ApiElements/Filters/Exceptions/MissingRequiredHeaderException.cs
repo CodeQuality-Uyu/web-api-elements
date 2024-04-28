@@ -6,13 +6,18 @@ using System.Threading.Tasks;
 
 namespace CQ.Exceptions
 {
-    public class MissingRequiredHeaderException : Exception 
+    public class MissingRequiredHeaderException : Exception
     {
         public readonly string Header;
 
         public MissingRequiredHeaderException(string header)
         {
             Header = header;
+        }
+
+        public static void Throw(string header)
+        {
+            throw new MissingRequiredHeaderException(header);
         }
     }
 }

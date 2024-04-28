@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace CQ.Exceptions
+﻿namespace CQ.Exceptions
 {
     public class AccessDeniedException : Exception
     {
@@ -13,6 +7,11 @@ namespace CQ.Exceptions
         public AccessDeniedException(string permission)
         { 
             this.Permission = permission; 
+        }
+
+        public static void Throw(string permission)
+        {
+            throw new AccessDeniedException(permission);
         }
     }
 }

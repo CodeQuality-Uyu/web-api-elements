@@ -21,5 +21,10 @@ namespace CQ.Exceptions
             Prop = prop;
             Value = value;
         }
+
+        public static void Throw(string prop, string value)
+        {
+            throw new InvalidRequestException(prop, value);
+        }
     }
 }
