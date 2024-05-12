@@ -1,24 +1,14 @@
-﻿using CQ.ApiElements.Filters.Extensions;
-using CQ.Utility;
-using Microsoft.AspNetCore.Mvc.Filters;
-using System.Net;
+﻿using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace CQ.ApiElements.Filters.Authentications
 {
-    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
-    public class ValidateClientSystemAttribute : Attribute, IAuthorizationFilter
+    public sealed class ValidateClientSystemAttribute : ValidateOrigin
     {
-        public void OnAuthorization(AuthorizationFilterContext context)
+        protected override object? GetItem(AuthorizationFilterContext context)
         {
             var clientSystemLogged = context.HttpContext.Items[ContextItems.ClientSystemLogged];
 
-            if (Guard.IsNotNull(clientSystemLogged))
-                return;
-
-            context.Result = context.HttpContext.Request.CreateCQErrorResponse(
-                HttpStatusCode.Unauthorized,
-                "Unauthenticated",
-                $"Missing header Authorization or PrivateKey");
+            return clientSystemLogged;
         }
     }
 }

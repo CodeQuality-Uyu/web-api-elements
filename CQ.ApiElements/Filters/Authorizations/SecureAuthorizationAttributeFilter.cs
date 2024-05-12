@@ -1,36 +1,37 @@
 ﻿using CQ.ApiElements.Filters.Authentications;
 using CQ.ApiElements.Filters.Extensions;
 using CQ.Exceptions;
-using CQ.Utility;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Security;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CQ.ApiElements.Filters.Authorizations
 {
-    public abstract class SecureAuthorizationAttributeFilter : SecureAuthenticationAttributeFilter
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
+    public abstract class SecureAuthorizationAttributeFilter : Attribute, IAsyncAuthorizationFilter
     {
         private readonly string? _permission;
 
-        public SecureAuthorizationAttributeFilter(string? permission = null)
+        private readonly SecureAuthenticationAttributeFilter _authenticationFilter;
+
+        public SecureAuthorizationAttributeFilter(
+            SecureAuthenticationAttributeFilter authenticationFilter,
+            string? permission = null)
         {
             _permission = permission;
+            _authenticationFilter = authenticationFilter;
         }
 
-        public override void OnAuthorization(AuthorizationFilterContext context)
+        public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
         {
-            base.OnAuthorization(context);
+            await _authenticationFilter.OnAuthorizationAsync(context).ConfigureAwait(false);
 
             var existAuthenticationError = context.Result != null;
             if (existAuthenticationError)
+            {
                 return;
+            }
 
             var accountIsLogged = context.HttpContext.Items[ContextItems.AccountLogged] != null;
 
@@ -39,13 +40,13 @@ namespace CQ.ApiElements.Filters.Authorizations
                 if (accountIsLogged)
                 {
                     var authorizationHeader = context.HttpContext.Request.Headers["Authorization"];
-                    AssertRequestPermissions(authorizationHeader, context);
+                    await AssertRequestPermissionsAsync(authorizationHeader, context).ConfigureAwait(false);
 
                     return;
                 }
 
                 var privateKeyHeader = context.HttpContext.Request.Headers["PrivateKey"];
-                AssertRequestPermissions(privateKeyHeader, context);
+                await AssertRequestPermissionsAsync(privateKeyHeader, context).ConfigureAwait(false);
             }
             catch (AccessDeniedException ex)
             {
@@ -62,21 +63,23 @@ namespace CQ.ApiElements.Filters.Authorizations
         }
 
         #region Assert permission
-        private void AssertRequestPermissions(string headerValue, AuthorizationFilterContext context)
+        private async Task AssertRequestPermissionsAsync(string headerValue, AuthorizationFilterContext context)
         {
-            var (isHeaderAuthorized, permission) = IsRequestAuthorized(headerValue, context);
+            var (isHeaderAuthorized, permission) = await IsRequestAuthorizedAsync(headerValue, context).ConfigureAwait(false);
 
             if (!isHeaderAuthorized)
+            {
                 throw new AccessDeniedException(permission);
+            }
         }
 
-        private (bool isAuthorized, string permission) IsRequestAuthorized(string headerValue, AuthorizationFilterContext context)
+        private async Task<(bool isAuthorized, string permission)> IsRequestAuthorizedAsync(string headerValue, AuthorizationFilterContext context)
         {
             var permission = BuildPermission(headerValue, context);
 
             try
             {
-                var isAuthorized = HasRequestPermission(headerValue, permission, context);
+                var isAuthorized = await HasRequestPermissionAsync(headerValue, permission, context).ConfigureAwait(false);
 
                 return (isAuthorized, permission);
             }
@@ -91,7 +94,7 @@ namespace CQ.ApiElements.Filters.Authorizations
             return _permission ?? $"{context.RouteData.Values["action"].ToString().ToLower()}-{context.RouteData.Values["controller"].ToString().ToLower()}";
         }
 
-        protected abstract bool HasRequestPermission(string headerValue, string permission, AuthorizationFilterContext context);
+        protected abstract Task<bool> HasRequestPermissionAsync(string headerValue, string permission, AuthorizationFilterContext context);
         #endregion
 
         #region Build responses

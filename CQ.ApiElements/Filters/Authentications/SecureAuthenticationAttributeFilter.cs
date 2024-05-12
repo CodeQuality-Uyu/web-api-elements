@@ -5,41 +5,38 @@ using CQ.Utility;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CQ.ApiElements.Filters.Authentications
 {
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
-    public abstract class SecureAuthenticationAttributeFilter : Attribute, IAuthorizationFilter
+    public abstract class SecureAuthenticationAttributeFilter : Attribute, IAsyncAuthorizationFilter
     {
-        public virtual void OnAuthorization(AuthorizationFilterContext context)
+        public virtual async Task OnAuthorizationAsync(AuthorizationFilterContext context)
         {
             var authorizationHeader = context.HttpContext.Request.Headers["Authorization"];
             var privateKeyHeader = context.HttpContext.Request.Headers["PrivateKey"];
 
             if (Guard.IsNotNullOrEmpty(authorizationHeader))
             {
-                HandleAuthentication(
+                await HandleAuthenticationAsync(
                     "Authorization",
                     authorizationHeader,
                     ContextItems.AccountLogged,
-                    context);
+                    context)
+                    .ConfigureAwait(false);
 
                 return;
             }
 
             if (Guard.IsNotNullOrEmpty(privateKeyHeader))
             {
-                HandleAuthentication(
+                await HandleAuthenticationAsync(
                     "PrivateKey",
                     privateKeyHeader,
                     ContextItems.ClientSystemLogged,
-                    context);
+                    context)
+                    .ConfigureAwait(false);
 
                 return;
             }
@@ -47,7 +44,7 @@ namespace CQ.ApiElements.Filters.Authentications
             context.Result = BuildMissingHeaderResponse(context);
         }
 
-        private void HandleAuthentication(
+        private async Task HandleAuthenticationAsync(
             string header,
             string headerValue,
             ContextItems item,
@@ -58,11 +55,15 @@ namespace CQ.ApiElements.Filters.Authentications
                 if (RequestIsLogged(item, context))
                     return;
 
-                AssertHeaderFormat(header, headerValue, context);
+                await AssertHeaderFormatAsync(header, headerValue, context).ConfigureAwait(false);
 
-                var request = AssertGetRequest(header, headerValue, context);
+                var request = await AssertGetRequestAsync(header, headerValue, context).ConfigureAwait(false);
 
                 context.HttpContext.Items[item] = request;
+            }
+            catch (MissingRequiredHeaderException ex)
+            {
+                context.Result = BuildMissingHeaderResponse(ex, header, context);
             }
             catch (InvalidHeaderException ex)
             {
@@ -94,7 +95,7 @@ namespace CQ.ApiElements.Filters.Authentications
             return context.HttpContext.Items[item] != null;
         }
 
-        private void AssertHeaderFormat(
+        private async Task AssertHeaderFormatAsync(
             string header,
             string headerValue,
             AuthorizationFilterContext context)
@@ -102,7 +103,7 @@ namespace CQ.ApiElements.Filters.Authentications
             bool isFormatValid;
             try
             {
-                isFormatValid = IsFormatOfHeaderValid(header, headerValue, context);
+                isFormatValid = await IsFormatOfHeaderValidAsync(header, headerValue, context).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -113,38 +114,46 @@ namespace CQ.ApiElements.Filters.Authentications
                 throw new InvalidHeaderException(header, headerValue);
         }
 
-        protected virtual bool IsFormatOfHeaderValid(string header, string headerValue, AuthorizationFilterContext context)
+        protected virtual Task<bool> IsFormatOfHeaderValidAsync(string header, string headerValue, AuthorizationFilterContext context)
         {
-            return true;
+            return Task.FromResult(true);
         }
         #endregion
 
         #region Get request
-        private object AssertGetRequest(
-            string header,
-            string headerValue,
-            AuthorizationFilterContext context)
+        private async Task<object> AssertGetRequestAsync(string header, string headerValue, AuthorizationFilterContext context)
         {
-            object request;
+            object item;
             try
             {
-                request = GetRequestByHeader(header, headerValue, context);
+                item = await GetRequestByHeaderAsync(header, headerValue, context).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
                 throw new ExpiredHeaderException(header, headerValue, ex);
             }
 
-            if (request == null)
+            if (Guard.IsNull(item))
                 throw new ExpiredHeaderException(header, headerValue);
 
-            return request;
+            return item;
         }
 
-        protected abstract object GetRequestByHeader(string header, string headerValue, AuthorizationFilterContext context);
+        protected abstract Task<object> GetRequestByHeaderAsync(string header, string headerValue, AuthorizationFilterContext context);
         #endregion
 
         #region Build responses
+        protected virtual IActionResult BuildMissingHeaderResponse(
+            MissingRequiredHeaderException exception,
+            string header,
+            AuthorizationFilterContext context)
+        {
+            return context.HttpContext.Request.CreateCQErrorResponse(
+                HttpStatusCode.Unauthorized,
+                "Unauthenticated",
+                $"Missing header {header}");
+        }
+
         protected virtual IActionResult BuildMissingHeaderResponse(AuthorizationFilterContext context)
         {
             return context.HttpContext.Request.CreateCQErrorResponse(
@@ -163,7 +172,6 @@ namespace CQ.ApiElements.Filters.Authentications
                 "InvalidHeaderFormat",
                 $"Invalid format of {header}");
         }
-
 
         protected virtual IActionResult BuildExpiredHeaderResponse(
             ExpiredHeaderException ex,
