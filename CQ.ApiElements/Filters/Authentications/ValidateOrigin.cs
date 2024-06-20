@@ -3,26 +3,21 @@ using CQ.Utility;
 using Microsoft.AspNetCore.Mvc.Filters;
 using System.Net;
 
-namespace CQ.ApiElements.Filters.Authentications
+namespace CQ.ApiElements.Filters.Authentications;
+public class ValidateOrigin(ContextItems Item) : BaseAttribute, IAuthorizationFilter
 {
-    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
-    public abstract class ValidateOrigin : Attribute, IAuthorizationFilter
+    public void OnAuthorization(AuthorizationFilterContext context)
     {
-        public void OnAuthorization(AuthorizationFilterContext context)
+        var origin = base.GetItem(context, Item);
+
+        if (Guard.IsNotNull(origin))
         {
-            var origin = GetItem(context);
-
-            if (Guard.IsNotNull(origin))
-            {
-                return;
-            }
-
-            context.Result = context.HttpContext.Request.CreateCQErrorResponse(
-                HttpStatusCode.Unauthorized,
-                "Unauthenticated",
-                $"Missing header Authorization or PrivateKey");
+            return;
         }
 
-        protected abstract object? GetItem(AuthorizationFilterContext context);
+        context.Result = context.HttpContext.Request.CreateCQErrorResponse(
+            HttpStatusCode.Unauthorized,
+            "Unauthenticated",
+            $"Missing header Authorization or PrivateKey");
     }
 }

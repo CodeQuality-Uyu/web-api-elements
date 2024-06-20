@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace CQ.ApiElements
+﻿
+namespace CQ.ApiElements;
+public enum ContextItems
 {
-    public enum ContextItems
-    {
-        AccountLogged,
-        ClientSystemLogged
-    }
+    AccountLogged,
+    ClientSystemLogged,
+    UserLogged
 }

@@ -1,25 +1,19 @@
 ﻿using CQ.Exceptions;
 
-namespace CQ.ApiElements.Dtos
+namespace CQ.ApiElements.Dtos;
+public abstract record class Request<TEntity>
 {
-    public abstract record class Request<TEntity>
+    public TEntity Map()
     {
-        public TEntity Map()
+        try
         {
-            try
-            {
-                Assert();
-
-                return InnerMap();
-            }
-            catch(ArgumentException ex)
-            {
-                throw new InvalidRequestException(ex.ParamName, ex.Source, ex);
-            }
+            return InnerMap();
         }
-
-        protected virtual void Assert() { }
-
-        protected abstract TEntity InnerMap();
+        catch (ArgumentException ex)
+        {
+            throw new InvalidRequestException(ex.ParamName, ex.Source, ex);
+        }
     }
+
+    protected abstract TEntity InnerMap();
 }

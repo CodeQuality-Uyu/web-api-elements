@@ -2,6 +2,6 @@
   <ItemGroup>
     <PackageReference 
     Include="CQ.Utility" 
-    Version="1.1.10" />
+    Version="1.1.16" />
   </ItemGroup>
 </Project>

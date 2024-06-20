@@ -1,23 +1,10 @@
-﻿
-
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace CQ.ApiElements.Filters
 {
-    public class ExceptionFilter : IExceptionFilter
+    public class ExceptionFilter(ExceptionStoreService _exceptionStoreService) : IExceptionFilter
     {
-        private readonly ExceptionStoreService _exceptionStoreService;
-
-        public ExceptionFilter(
-            ExceptionStoreService exceptionStoreService,
-            ExceptionRegistryService exceptionRegistryService)
-        {
-            this._exceptionStoreService = exceptionStoreService;
-
-            exceptionRegistryService.RegisterKnownExceptions(exceptionStoreService);
-        }
-
         public virtual void OnException(ExceptionContext context)
         {
             if (context == null)
@@ -34,9 +21,9 @@ namespace CQ.ApiElements.Filters
 
         private ExceptionResponse HandleException(ExceptionContext context)
         {
-            var customContext = this.BuildThrownContext(context);
+            var customContext = BuildThrownContext(context);
 
-            return this._exceptionStoreService.HandleException(customContext);
+            return _exceptionStoreService.HandleException(customContext);
         }
 
         protected virtual ExceptionThrownContext BuildThrownContext(ExceptionContext context)

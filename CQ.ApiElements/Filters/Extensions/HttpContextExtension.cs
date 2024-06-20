@@ -18,5 +18,12 @@ namespace CQ.ApiElements.Filters.Extensions
 
             return (TResult) element;
         }
+
+        public static object? GetItem(this HttpContext context, ContextItems item)
+        {
+            var element = context.Items[item];
+
+            return element;
+        }
     }
 }
