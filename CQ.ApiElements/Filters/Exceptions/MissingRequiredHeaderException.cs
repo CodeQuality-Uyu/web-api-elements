@@ -1,23 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace CQ.ApiElements.Filters.Exceptions;
 
-namespace CQ.Exceptions
+public class MissingRequiredHeaderException(string header)
+    : Exception
 {
-    public class MissingRequiredHeaderException : Exception
+    public readonly string Header = header;
+
+    public static void Throw(string header)
     {
-        public readonly string Header;
-
-        public MissingRequiredHeaderException(string header)
-        {
-            Header = header;
-        }
-
-        public static void Throw(string header)
-        {
-            throw new MissingRequiredHeaderException(header);
-        }
+        throw new MissingRequiredHeaderException(header);
     }
 }

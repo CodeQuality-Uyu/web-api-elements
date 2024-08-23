@@ -1,23 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿
+namespace CQ.ApiElements.Filters.Exceptions;
 
-namespace CQ.ApiElements.Filters.Exceptions
+internal sealed class ContextItemNotFoundException(ContextItems item) : Exception
 {
-    internal sealed class ContextItemNotFoundException : Exception
+    public readonly ContextItems Item = item;
+
+    public static void Throw(ContextItems item)
     {
-        public readonly ContextItems Item;
-
-        public ContextItemNotFoundException(ContextItems item)
-        {
-            this.Item = item;
-        }
-
-        public static void Throw(ContextItems item)
-        {
-            throw new ContextItemNotFoundException(item);
-        }
+        throw new ContextItemNotFoundException(item);
     }
 }

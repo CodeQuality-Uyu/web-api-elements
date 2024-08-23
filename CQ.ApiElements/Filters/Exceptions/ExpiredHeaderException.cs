@@ -1,30 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿
+namespace CQ.ApiElements.Filters.Exceptions;
 
-namespace CQ.ApiElements.Filters.Exceptions
+public sealed class ExpiredHeaderException(
+    string header,
+    string value,
+    Exception? inner = null)
+    : Exception(
+        inner?.Message,
+        inner)
 {
-    public sealed class ExpiredHeaderException : Exception
+    public readonly string Header = header;
+
+    public readonly string Value = value;
+
+    public static void Throw(
+        string header,
+        string value)
     {
-        public readonly string Header;
-
-        public readonly string Value;
-
-        public ExpiredHeaderException(
-            string header,
-            string value,
-            Exception? inner = null) 
-            : base(inner?.Message, inner)
-        {
-            Header = header;
-            Value = value;
-        }
-
-        public static void Throw(string header, string value)
-        {
-            throw new ExpiredHeaderException(header, value);
-        }
+        throw new ExpiredHeaderException(header, value);
     }
 }

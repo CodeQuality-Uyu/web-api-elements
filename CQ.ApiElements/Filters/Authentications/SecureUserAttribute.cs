@@ -1,42 +1,77 @@
-﻿using CQ.ApiElements.Filters.Extensions;
+﻿using CQ.ApiElements.Filters.ExceptionFilter;
+using CQ.ApiElements.Filters.Exceptions;
+using CQ.ApiElements.Filters.Extensions;
 using CQ.Utility;
 using Microsoft.AspNetCore.Mvc.Filters;
 using System.Net;
 
 namespace CQ.ApiElements.Filters.Authentications;
-public abstract class SecureUserAttribute : BaseAttribute, IAsyncAuthorizationFilter
+public abstract class SecureUserAttribute()
+    : BaseAttribute,
+    IAsyncAuthorizationFilter
 {
-    public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
+    private static IDictionary<Type, ErrorResponse>? _errors;
+
+    internal static IDictionary<Type, ErrorResponse> Errors
     {
-        if (context.Result != null)
+        get
         {
-            return;
+            if (Guard.IsNull(_errors))
+            {
+                var contextItemNotFoundErrorResponse = ValidateItemAttribute.Errors[typeof(ContextItemNotFoundException)];
+                _errors = new Dictionary<Type, ErrorResponse>
+                {
+                    {
+                        typeof(ContextItemNotFoundException),
+                        contextItemNotFoundErrorResponse
+                    },
+                    {
+                        typeof(Exception),
+                        new ErrorResponse(
+                            HttpStatusCode.Unauthorized,
+                            "Unsync",
+                            "User for account not found",
+                            string.Empty,
+                            "Exist an account but not linked to an existent user"
+                            )
+                    }
+                };
+            }
+            
+            return _errors!;
         }
+    }
 
-        var existAccountLogged = base.GetItem(context, ContextItems.AccountLogged) != null;
-
-        if (!existAccountLogged)
+    public virtual async Task OnAuthorizationAsync(AuthorizationFilterContext context)
+    {
+        try
         {
-            context.Result = context.HttpContext.Request.CreateCQErrorResponse(
-            HttpStatusCode.Unauthorized,
-            "Unauthenticated",
-            $"Missing header Authorization or PrivateKey");
-            return;
+            var existErrorOnPrevFilter = context.Result != null;
+            if (existErrorOnPrevFilter)
+            {
+                return;
+            }
+
+            context.GetItem(ContextItems.AccountLogged);
+
+            var userLogged = await GetUserLoggedAsync(context).ConfigureAwait(false);
+
+            context.SetItem(
+                ContextItems.UserLogged,
+                userLogged);
         }
-
-        var userLogged = await GetUserLoggedAsync(context).ConfigureAwait(false);
-
-        if (Guard.IsNull(userLogged))
+        catch (Exception ex)
         {
-            context.Result = context.HttpContext.Request.CreateCQErrorResponse(
-           HttpStatusCode.Unauthorized,
-           "Unsync",
-           $"Missing user for account");
+            var exceptionContext = new ExceptionThrownContext(
+                context,
+                ex,
+                string.Empty,
+                string.Empty);
 
-            return;
+            context.Result = BuildErrorResponse(
+                Errors,
+                exceptionContext);
         }
-
-        base.SetItem(context, ContextItems.UserLogged, userLogged);
     }
 
     protected abstract Task<object> GetUserLoggedAsync(AuthorizationFilterContext context);

@@ -1,63 +1,76 @@
 ﻿using System.Net;
 
-namespace CQ.ApiElements.Filters
+namespace CQ.ApiElements.Filters.ExceptionFilter;
+
+public sealed record class ExceptionsOfOrigin
 {
-    public sealed record class ExceptionsOfOrigin
+    public readonly IDictionary<Type, ErrorResponse> Exceptions = new Dictionary<Type, ErrorResponse>();
+
+    public ExceptionsOfOrigin AddException<TException>(
+        HttpStatusCode statusCode,
+        string code,
+        string message,
+        string? logMessage = null)
+        where TException : Exception
     {
-        public readonly IDictionary<Type, ExceptionResponse> Exceptions = new Dictionary<Type, ExceptionResponse>();
+        if (Exceptions.ContainsKey(typeof(TException)))
+        {
+            return this;
+        }
 
-        public ExceptionsOfOrigin AddException<TException>(
+        Exceptions.Add(
+            typeof(TException),
+            new ErrorResponse(
+                statusCode,
+                code,
+                message,
+                logMessage));
+
+        return this;
+    }
+
+    public ExceptionsOfOrigin AddException<TException>(
+        HttpStatusCode statusCode,
+        string code,
+        Func<TException, ExceptionThrownContext, string> messageFunction,
+        Func<TException, ExceptionThrownContext, string>? logMessageFunction = null)
+        where TException : Exception
+    {
+        if (Exceptions.ContainsKey(typeof(TException)))
+        {
+            return this;
+        }
+
+        Exceptions.Add(
+            typeof(TException),
+            new DynamicErrorResponse<TException>(
+                statusCode,
+                code,
+                messageFunction,
+                logMessageFunction));
+
+        return this;
+    }
+
+
+    public ExceptionsOfOrigin AddException<TException>(
+        Func<TException,
+            ExceptionThrownContext,
+            (HttpStatusCode statusCode,
             string code,
-            HttpStatusCode statusCode,
             string message,
-            string? logMessage = null)
-            where TException : Exception
+            string? logMessage)> function)
+        where TException : Exception
+    {
+        if (Exceptions.ContainsKey(typeof(TException)))
         {
-            if (this.Exceptions.ContainsKey(typeof(TException))) return this;
-
-            this.Exceptions.Add(
-                typeof(TException),
-                new ExceptionResponse(
-                    code,
-                    statusCode,
-                    message,
-                    logMessage));
-
             return this;
         }
 
-        public ExceptionsOfOrigin AddException<TException>(
-            string code,
-            HttpStatusCode statusCode,
-            Func<TException, ExceptionThrownContext, string> messageFunction,
-            Func<TException, ExceptionThrownContext, string>? logMessageFunction = null)
-            where TException : Exception
-        {
-            if (this.Exceptions.ContainsKey(typeof(TException))) return this;
+        Exceptions.Add(
+            typeof(TException),
+            new DynamicErrorResponse<TException>(function));
 
-            this.Exceptions.Add(
-                typeof(TException),
-                new DinamicExceptionResponse<TException>(
-                    code,
-                    statusCode,
-                    messageFunction,
-                    logMessageFunction));
-
-            return this;
-        }
-
-
-        public ExceptionsOfOrigin AddException<TException>(
-            Func<TException, ExceptionThrownContext, (string code, HttpStatusCode statusCode, string message, string? logMessage)> function)
-            where TException : Exception
-        {
-            if (this.Exceptions.ContainsKey(typeof(TException))) return this;
-
-            this.Exceptions.Add(
-                typeof(TException),
-                new DinamicExceptionResponse<TException>(function));
-
-            return this;
-        }
+        return this;
     }
 }

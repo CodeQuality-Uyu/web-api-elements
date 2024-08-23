@@ -1,52 +1,54 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
-namespace CQ.ApiElements.Filters
+namespace CQ.ApiElements.Filters.ExceptionFilter;
+
+public class ExceptionFilter(ExceptionStoreService exceptionStoreService)
+    : BaseAttribute,
+    IExceptionFilter
 {
-    public class ExceptionFilter(ExceptionStoreService _exceptionStoreService) : IExceptionFilter
+    public virtual void OnException(ExceptionContext context)
     {
-        public virtual void OnException(ExceptionContext context)
+        if (context == null)
         {
-            if (context == null)
-            {
-                return;
-            }
-
-            var response = HandleException(context);
-
-            LogResponse(response);
-
-            context.Result = BuildResponse(response);
+            return;
         }
 
-        private ExceptionResponse HandleException(ExceptionContext context)
+        var response = HandleException(context);
+
+        LogResponse(response);
+
+        context.Result = BuildResponse(response);
+    }
+
+    private ErrorResponse HandleException(ExceptionContext context)
+    {
+        var customContext = BuildThrownContext(context);
+
+        var errorResponse = exceptionStoreService.HandleException(customContext);
+
+        return errorResponse ??
+            BuildUnexpectedErrorResponse(context.Exception);
+    }
+
+    protected virtual ExceptionThrownContext BuildThrownContext(ExceptionContext context)
+    {
+        return new ExceptionThrownContext(
+            context,
+            context.Exception,
+            context.RouteData.Values["controller"].ToString()!,
+            context.RouteData.Values["action"].ToString()!);
+    }
+
+    protected virtual IActionResult BuildResponse(ErrorResponse response)
+    {
+        return new ObjectResult(response)
         {
-            var customContext = BuildThrownContext(context);
+            StatusCode = (int)response.StatusCode,
+        };
+    }
 
-            return _exceptionStoreService.HandleException(customContext);
-        }
-
-        protected virtual ExceptionThrownContext BuildThrownContext(ExceptionContext context)
-        {
-            return new ExceptionThrownContext(
-                context,
-                context.Exception,
-                context.RouteData.Values["controller"].ToString()!,
-                context.RouteData.Values["action"].ToString()!);
-        }
-
-        protected virtual IActionResult BuildResponse(ExceptionResponse response)
-        {
-            return new ObjectResult(new
-            {
-                Code = response.Code,
-                Message = response.Message
-            })
-            {
-                StatusCode = (int)response.StatusCode,
-            };
-        }
-
-        protected virtual void LogResponse(ExceptionResponse response) { }
+    protected virtual void LogResponse(ErrorResponse response)
+    {
     }
 }

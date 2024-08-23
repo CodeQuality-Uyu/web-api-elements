@@ -1,10 +1,10 @@
-﻿using CQ.ApiElements.Filters;
+﻿using CQ.ApiElements.Filters.ExceptionFilter;
 using CQ.Extensions.ServiceCollection;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CQ.ApiElements.AppConfig;
-public static class ServiceCollectionExtensions
+public static class ApiElementsConfig
 {
     public static MvcOptions AddExceptionGlobalHandler(this MvcOptions options)
     {
@@ -37,7 +37,9 @@ public static class ServiceCollectionExtensions
         where TExceptionStore : ExceptionStoreService
     {
         services
-            .AddService<ExceptionStoreService, TExceptionStore>(storeLifeTime);
+            .AddService<ExceptionStoreService, TExceptionStore>(storeLifeTime)
+            .AddService<TExceptionStore>(storeLifeTime)
+            ;
 
         return services;
     }

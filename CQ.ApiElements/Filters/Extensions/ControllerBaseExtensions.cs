@@ -2,7 +2,7 @@
 
 namespace CQ.ApiElements.Filters.Extensions
 {
-    public static class ControllerBaseExtension
+    public static class ControllerBaseExtensions
     {
         public static TResult GetItem<TResult>(
             this ControllerBase controller,

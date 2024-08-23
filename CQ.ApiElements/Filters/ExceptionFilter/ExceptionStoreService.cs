@@ -1,43 +1,43 @@
 ﻿using CQ.Exceptions;
 using System.Net;
 
-namespace CQ.ApiElements.Filters;
+namespace CQ.ApiElements.Filters.ExceptionFilter;
 public class ExceptionStoreService
 {
     public readonly IDictionary<OriginError, ExceptionsOfOrigin> SpecificExceptions = new Dictionary<OriginError, ExceptionsOfOrigin>();
 
-    public readonly IDictionary<Type, ExceptionResponse> GenericExceptions = new Dictionary<Type, ExceptionResponse>();
+    public readonly IDictionary<Type, ErrorResponse> GenericExceptions = new Dictionary<Type, ErrorResponse>();
 
     public ExceptionStoreService()
     {
         AddGenericException<ResourceNotFoundException>(
-            "ResourceNotFound",
             HttpStatusCode.NotFound,
+            "ResourceNotFound",
             (exception, context) => $"Resource: {exception.Resource} was not found with parameters: {string.Join(", ", exception.Parameters)}")
 
             .AddGenericException<ResourceDuplicatedException>(
-            "ResourceDuplicated",
             HttpStatusCode.Conflict,
+            "ResourceDuplicated",
             (exception, context) => $"Resource: {exception.Resource} is duplicated with parameters: {string.Join(", ", exception.Parameters)}")
 
             .AddGenericException<ArgumentException>(
-                "InvalidArgument",
                 HttpStatusCode.InternalServerError,
+                "InvalidArgument",
                 (exception, context) => $"Invalid argument '{exception.ParamName}'. {exception.Message}")
 
             .AddGenericException<ArgumentNullException>(
-                "InvalidArgument",
                 HttpStatusCode.InternalServerError,
+                "InvalidArgument",
                 (exception, context) => $"Invalid argument '{exception.ParamName}'. {exception.Message}")
 
             .AddGenericException<InvalidOperationException>(
-                "InterruptedOperation",
                 HttpStatusCode.InternalServerError,
+                "InterruptedOperation",
                 "The operation was interrupted due to an error.")
 
             .AddGenericException<InvalidRequestException>(
-            "InvalidRequest",
             HttpStatusCode.BadRequest,
+            "InvalidRequest",
             (exception, context) => $"Invalid argument '{exception.Prop}'. {exception.InnerException.Message}",
             (exception, context) => $"Invalid argument '{exception.Prop}' with value '{exception.Value}'. {exception.InnerException.Message}"
             );
@@ -47,35 +47,35 @@ public class ExceptionStoreService
 
     public ExceptionsOfOrigin AddOriginExceptions(OriginError error)
     {
-        if (this.SpecificExceptions.ContainsKey(error))
+        if (SpecificExceptions.TryGetValue(error, out var value))
         {
-            return this.SpecificExceptions[error];
+            return value;
         }
 
         var exceptionsOfOrigin = new ExceptionsOfOrigin();
 
-        this.SpecificExceptions.Add(error, exceptionsOfOrigin);
+        SpecificExceptions.Add(error, exceptionsOfOrigin);
 
         return exceptionsOfOrigin;
     }
 
     public ExceptionStoreService AddGenericException<TException>(
-        string code,
         HttpStatusCode statusCode,
+        string code,
         string message,
         string? logMessage = null)
         where TException : Exception
     {
-        if (this.GenericExceptions.ContainsKey(typeof(TException)))
+        if (GenericExceptions.ContainsKey(typeof(TException)))
         {
             return this;
         }
 
-        this.GenericExceptions.Add(
+        GenericExceptions.Add(
             typeof(TException),
-            new ExceptionResponse(
-                code,
+            new ErrorResponse(
                 statusCode,
+                code,
                 message,
                 logMessage));
 
@@ -83,22 +83,22 @@ public class ExceptionStoreService
     }
 
     public ExceptionStoreService AddGenericException<TException>(
-        string code,
         HttpStatusCode statusCode,
+        string code,
         Func<TException, ExceptionThrownContext, string> messageFunction,
         Func<TException, ExceptionThrownContext, string>? logMessageFunction = null)
         where TException : Exception
     {
-        if (this.GenericExceptions.ContainsKey(typeof(TException)))
+        if (GenericExceptions.ContainsKey(typeof(TException)))
         {
             return this;
         }
 
-        this.GenericExceptions.Add(
+        GenericExceptions.Add(
             typeof(TException),
-            new DinamicExceptionResponse<TException>(
+            new DynamicErrorResponse<TException>(
+                statusCode,
                 code,
-                statusCode,
                 messageFunction,
                 logMessageFunction));
 
@@ -106,45 +106,22 @@ public class ExceptionStoreService
     }
 
     public ExceptionStoreService AddGenericException<TException>(
-       Func<TException, ExceptionThrownContext, string> codeFunction,
        HttpStatusCode statusCode,
-       Func<TException, ExceptionThrownContext, string> messageFunction,
-       Func<TException, ExceptionThrownContext, string>? logMessageFunction = null)
-       where TException : Exception
-    {
-        if (this.GenericExceptions.ContainsKey(typeof(TException)))
-        {
-            return this;
-        }
-
-        this.GenericExceptions.Add(
-            typeof(TException),
-            new DinamicExceptionResponse<TException>(
-                codeFunction,
-                statusCode,
-                messageFunction,
-                logMessageFunction));
-
-        return this;
-    }
-
-    public ExceptionStoreService AddGenericException<TException>(
        Func<TException, ExceptionThrownContext, string> codeFunction,
-       Func<TException, ExceptionThrownContext, HttpStatusCode> statusCodeFunc,
        Func<TException, ExceptionThrownContext, string> messageFunction,
        Func<TException, ExceptionThrownContext, string>? logMessageFunction = null)
        where TException : Exception
     {
-        if (this.GenericExceptions.ContainsKey(typeof(TException)))
+        if (GenericExceptions.ContainsKey(typeof(TException)))
         {
             return this;
         }
 
-        this.GenericExceptions.Add(
+        GenericExceptions.Add(
             typeof(TException),
-            new DinamicExceptionResponse<TException>(
+            new DynamicErrorResponse<TException>(
+                statusCode,
                 codeFunction,
-                statusCodeFunc,
                 messageFunction,
                 logMessageFunction));
 
@@ -152,35 +129,61 @@ public class ExceptionStoreService
     }
 
     public ExceptionStoreService AddGenericException<TException>(
-        Func<TException, ExceptionThrownContext, (string code, HttpStatusCode statusCode, string message, string? logMessage)> function)
+       Func<TException, ExceptionThrownContext, HttpStatusCode> statusCodeFunc,
+       Func<TException, ExceptionThrownContext, string> codeFunction,
+       Func<TException, ExceptionThrownContext, string> messageFunction,
+       Func<TException, ExceptionThrownContext, string>? logMessageFunction = null)
        where TException : Exception
     {
-        if (this.GenericExceptions.ContainsKey(typeof(TException)))
+        if (GenericExceptions.ContainsKey(typeof(TException)))
         {
             return this;
         }
 
-        this.GenericExceptions.Add(
+        GenericExceptions.Add(
             typeof(TException),
-            new DinamicExceptionResponse<TException>(function));
+            new DynamicErrorResponse<TException>(
+                statusCodeFunc,
+                codeFunction,
+                messageFunction,
+                logMessageFunction));
 
         return this;
     }
 
-    public ExceptionResponse HandleException(ExceptionThrownContext context)
+    public ExceptionStoreService AddGenericException<TException>(Func<
+        TException,
+        ExceptionThrownContext,
+        (HttpStatusCode statusCode,
+        string code,
+        string message,
+        string? logMessage)> function)
+       where TException : Exception
+    {
+        if (GenericExceptions.ContainsKey(typeof(TException)))
+        {
+            return this;
+        }
+
+        GenericExceptions.Add(
+            typeof(TException),
+            new DynamicErrorResponse<TException>(function));
+
+        return this;
+    }
+
+    public ErrorResponse? HandleException(ExceptionThrownContext context)
     {
         var exception = HandleSpecificException(context);
 
         exception ??= HandleTypeException(context);
 
-        exception ??= new("ExceptionOccured", HttpStatusCode.InternalServerError, "An unpredicted exception ocurred");
-
-        exception.SetContext(context);
+        exception?.CompileErrorResponse(context);
 
         return exception;
     }
 
-    private ExceptionResponse? HandleSpecificException(ExceptionThrownContext context)
+    private ErrorResponse? HandleSpecificException(ExceptionThrownContext context)
     {
         var exception = context.Exception;
         var originError = new OriginError(context.ControllerName, context.Action);
@@ -201,17 +204,17 @@ public class ExceptionStoreService
         return mapping;
     }
 
-    private ExceptionResponse? HandleTypeException(ExceptionThrownContext context)
+    private ErrorResponse? HandleTypeException(ExceptionThrownContext context)
     {
         var exception = context.Exception;
-        var registeredType = this.GetRegisteredType(exception.GetType());
+        var registeredType = GetRegisteredType(exception.GetType());
 
         if (registeredType == null)
         {
             return null;
         }
 
-        var mapping = this.GenericExceptions[registeredType];
+        var mapping = GenericExceptions[registeredType];
 
         return mapping;
     }
@@ -223,9 +226,9 @@ public class ExceptionStoreService
             return null;
         }
 
-        if (!this.GenericExceptions.ContainsKey(initialType))
+        if (!GenericExceptions.ContainsKey(initialType))
         {
-            return this.GetRegisteredType(initialType.BaseType ?? typeof(Exception));
+            return GetRegisteredType(initialType.BaseType ?? typeof(Exception));
         }
 
         return initialType;

@@ -1,30 +1,44 @@
-﻿using CQ.ApiElements.Filters.Extensions;
-using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.Extensions.DependencyInjection;
+﻿using CQ.ApiElements.Filters.ExceptionFilter;
+using CQ.Utility;
+using Microsoft.AspNetCore.Mvc;
+using System.Net;
 
 namespace CQ.ApiElements.Filters;
 
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
 public class BaseAttribute : Attribute
 {
-    protected virtual TService GetService<TService>(FilterContext context) where TService : class
+    protected virtual ErrorResponse BuildUnexpectedErrorResponse(Exception exception)
     {
-        return context.HttpContext.RequestServices.GetRequiredService<TService>();
+        var errorResponse = new ErrorResponse(
+            HttpStatusCode.InternalServerError,
+            "InternalProblem",
+            "Problems with the server",
+            string.Empty,
+            "An uncatch exception occured",
+            exception
+            );
+
+        return errorResponse;
     }
 
-    protected TItem? GetItem<TItem>(FilterContext context, ContextItems item)
-        where TItem : class
+    public virtual IActionResult BuildErrorResponse(
+        IDictionary<Type, ErrorResponse> errors,
+        ExceptionThrownContext exceptionContext)
     {
-        return context.HttpContext.GetItem<TItem>(item);
-    }
+        var error = errors.FirstOrDefault(e => e.Key == exceptionContext.Exception.GetType());
 
-    protected object? GetItem(FilterContext context, ContextItems item)
-    {
-        return context.HttpContext.GetItem(item);
-    }
+        var errorBody = BuildUnexpectedErrorResponse(exceptionContext.Exception);
+        if (Guard.IsNotNull(error))
+        {
+            errorBody = error.Value;
 
-    protected void SetItem(FilterContext context, ContextItems item, object value)
-    {
-        context.HttpContext.Items[item] = value;
+            errorBody = errorBody.CompileErrorResponse(exceptionContext);
+        }
+
+        return new ObjectResult(errorBody)
+        {
+            StatusCode = (int)errorBody.StatusCode
+        };
     }
 }

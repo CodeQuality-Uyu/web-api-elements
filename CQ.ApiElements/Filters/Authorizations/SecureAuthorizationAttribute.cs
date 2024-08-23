@@ -1,31 +1,69 @@
 ﻿using CQ.ApiElements.Filters.Authentications;
+using CQ.ApiElements.Filters.ExceptionFilter;
+using CQ.ApiElements.Filters.Exceptions;
 using CQ.ApiElements.Filters.Extensions;
 using CQ.Exceptions;
-using Microsoft.AspNetCore.Mvc;
+using CQ.Utility;
 using Microsoft.AspNetCore.Mvc.Filters;
 using System.Net;
 
 namespace CQ.ApiElements.Filters.Authorizations;
 
 public abstract class SecureAuthorizationAttribute(
-    SecureAuthenticationAttribute _secureAuthenticationAttribute,
-    string? _permission = null) :
-    BaseAttribute, IAsyncAuthorizationFilter
+    string? _permission = null)
+    : BaseAttribute,
+    IAsyncAuthorizationFilter
 {
+    internal static IDictionary<Type, ErrorResponse>? _errors;
+
+    internal static IDictionary<Type, ErrorResponse> Errors
+    {
+        get
+        {
+            if (Guard.IsNull(_errors))
+            {
+                var contextItemNotFoundErrorResponse = ValidateItemAttribute.Errors[typeof(ContextItemNotFoundException)];
+                _errors = new Dictionary<Type, ErrorResponse>
+                {
+                    {
+                        typeof(ContextItemNotFoundException),
+                        contextItemNotFoundErrorResponse
+                    },
+                    {
+                        typeof(AccessDeniedException),
+                        new DynamicErrorResponse<AccessDeniedException>(
+                        HttpStatusCode.Forbidden,
+                        "AccessDenied",
+                        (ex, context) => $"Missing permission {ex.Permission}"
+                            )
+                    },
+                };
+            }
+
+            return _errors;
+        }
+    }
+
     public virtual async Task OnAuthorizationAsync(AuthorizationFilterContext context)
     {
-        await _secureAuthenticationAttribute.OnAuthorizationAsync(context).ConfigureAwait(false);
-
-        var existAuthenticationError = context.Result != null;
-        if (existAuthenticationError)
-        {
-            return;
-        }
-
-        var accountIsLogged = base.GetItem(context, ContextItems.AccountLogged) != null;
-
         try
         {
+            var existErrorOnPrevFilter = context.Result != null;
+            if (existErrorOnPrevFilter)
+            {
+                return;
+            }
+
+            var accountIsNotLogged = context.GetItemOrDefault(ContextItems.AccountLogged) == null;
+            var systemIsNotLogged = context.GetItemOrDefault(ContextItems.ClientSystemLogged) == null;
+
+            if (systemIsNotLogged && accountIsNotLogged)
+            {
+                   ContextItemNotFoundException.Throw(ContextItems.AccountLogged);
+            }
+
+            var accountIsLogged = context.GetItemOrDefault(ContextItems.AccountLogged) != null;
+
             if (accountIsLogged)
             {
                 var authorizationHeader = context.HttpContext.Request.Headers["Authorization"];
@@ -37,32 +75,36 @@ public abstract class SecureAuthorizationAttribute(
             var privateKeyHeader = context.HttpContext.Request.Headers["PrivateKey"];
             await AssertRequestPermissionsAsync(privateKeyHeader, context).ConfigureAwait(false);
         }
-        catch (AccessDeniedException ex)
+        catch (Exception ex)
         {
-            context.Result = BuildUnauthorizedResponse(ex, context);
-        }
-        catch (ArgumentNullException ex)
-        {
-            context.Result = BuldInvalidArgumentResponse(ex, context);
-        }
-        catch (Exception)
-        {
-            context.Result = BuildGenericResponse(context);
+            var exceptionContext = new ExceptionThrownContext(
+                context,
+                ex,
+                string.Empty,
+                string.Empty);
+
+            context.Result = BuildErrorResponse(
+                Errors,
+                exceptionContext);
         }
     }
 
     #region Assert permission
-    private async Task AssertRequestPermissionsAsync(string headerValue, AuthorizationFilterContext context)
+    private async Task AssertRequestPermissionsAsync(
+        string headerValue,
+        AuthorizationFilterContext context)
     {
         var (isHeaderAuthorized, permission) = await IsRequestAuthorizedAsync(headerValue, context).ConfigureAwait(false);
 
         if (!isHeaderAuthorized)
         {
-            throw new AccessDeniedException(permission);
+            AccessDeniedException.Throw(permission);
         }
     }
 
-    private async Task<(bool isAuthorized, string permission)> IsRequestAuthorizedAsync(string headerValue, AuthorizationFilterContext context)
+    private async Task<(bool isAuthorized, string permission)> IsRequestAuthorizedAsync(
+        string headerValue,
+        AuthorizationFilterContext context)
     {
         var permission = BuildPermission(headerValue, context);
 
@@ -78,28 +120,16 @@ public abstract class SecureAuthorizationAttribute(
         }
     }
 
-    protected virtual string BuildPermission(string headerValue, AuthorizationFilterContext context)
+    protected virtual string BuildPermission(
+        string headerValue,
+        AuthorizationFilterContext context)
     {
         return _permission ?? $"{context.RouteData.Values["action"].ToString().ToLower()}-{context.RouteData.Values["controller"].ToString().ToLower()}";
     }
 
-    protected abstract Task<bool> HasRequestPermissionAsync(string headerValue, string permission, AuthorizationFilterContext context);
-    #endregion
-
-    #region Build responses
-    protected virtual IActionResult BuildUnauthorizedResponse(AccessDeniedException ex, AuthorizationFilterContext context)
-    {
-        return context.HttpContext.Request.CreateCQErrorResponse(HttpStatusCode.Forbidden, "AccessDenied", $"Missing permission {ex.Permission}");
-    }
-
-    protected virtual IActionResult BuldInvalidArgumentResponse(ArgumentNullException ex, AuthorizationFilterContext context)
-    {
-        return context.HttpContext.Request.CreateCQErrorResponse(HttpStatusCode.BadRequest, "RequestInvalid", $"Missing or invalid {ex.ParamName}");
-    }
-
-    protected virtual IActionResult BuildGenericResponse(AuthorizationFilterContext context)
-    {
-        return context.HttpContext.Request.CreateCQErrorResponse(HttpStatusCode.InternalServerError, "InternalProblem", "Problems with the server");
-    }
+    protected abstract Task<bool> HasRequestPermissionAsync(
+        string headerValue,
+        string permission,
+        AuthorizationFilterContext context);
     #endregion
 }
