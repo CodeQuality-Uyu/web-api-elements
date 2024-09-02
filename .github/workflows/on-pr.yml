@@ -1,0 +1,57 @@
+name: Assert Update Package
+
+on:
+  pull_request:
+    branches:
+      [
+        main
+      ]
+
+env:
+  dotnet_version: "8.0.x" # The .NET SDK version to use
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.dotnet_version }}
+
+      - name: Determine Package Name
+        run: |
+          if [ "${{ github.head_ref }}" == "exception" ]; then
+            PACKAGE_NAME="CQ.Exceptions"
+          elif [ "${{ github.head_ref }}" == "web-api-element" ]; then
+            PACKAGE_NAME="CQ.ApiElements"
+          else
+            echo "Unknown branch. Exiting."
+            exit 1
+          fi
+          echo "Package Name: $PACKAGE_NAME"
+
+          echo "package_name=$PACKAGE_NAME" >> $GITHUB_ENV
+
+      - name: Install dependencies
+        run: dotnet restore $package_name
+
+      - name: Run build
+        run: dotnet build $package_name --configuration Release
+
+  check-pr-title:
+    name: Check PR Title
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check If PR Title Follows Semantic Versioning
+        run: |
+          PR_TITLE=$(echo "${{ github.event.pull_request.title }}")
+          if [[ ! "$PR_TITLE" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Pull request title '$PR_TITLE' does not follow semantic versioning."
+            exit 1
+          fi
