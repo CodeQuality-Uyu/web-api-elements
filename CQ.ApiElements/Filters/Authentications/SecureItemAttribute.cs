@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using System.Net;
 
 namespace CQ.ApiElements.Filters.Authentications;
-public class ValidateItemAttribute(ContextItems Item)
+public class SecureItemAttribute(ContextItems Item)
     : BaseAttribute,
     IAuthorizationFilter
 {
