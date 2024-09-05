@@ -1,55 +1,55 @@
-name: Release
+# name: Release
 
-on:
-  push:
-    tags:
-    - '*.*.*'
+# on:
+#   push:
+#     tags:
+#     - '*.*.*'
 
-jobs:
-  extract_version:
-    name: Extract version
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    outputs:
-      branch: ${{ steps.extract_branch.outputs.branch }}
-      version: ${{ steps.extract_version.outputs.version }}
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
+# jobs:
+#   extract_version:
+#     name: Extract version
+#     runs-on: ubuntu-latest
+#     timeout-minutes: 15
+#     outputs:
+#       branch: ${{ steps.extract_branch.outputs.branch }}
+#       version: ${{ steps.extract_version.outputs.version }}
+#     steps:
+#     - name: Checkout
+#       uses: actions/checkout@v2
 
-    - name: Extract version
-      id: extract_branch
-      run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/*/}}" >> $GITHUB_OUTPUT
+#     - name: Extract version
+#       id: extract_branch
+#       run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/*/}}" >> $GITHUB_OUTPUT
 
-    - name: Clean version
-      id: extract_version
-      run: echo "version=$(echo ${{ steps.extract_branch.outputs.branch }} | sed 's/^v//')" >> $GITHUB_OUTPUT
+#     - name: Clean version
+#       id: extract_version
+#       run: echo "version=$(echo ${{ steps.extract_branch.outputs.branch }} | sed 's/^v//')" >> $GITHUB_OUTPUT
 
-    - name: Print version and branch
-      run: echo "${{steps.extract_version.outputs.version}} ${{steps.extract_branch.outputs.branch}}"
+#     - name: Print version and branch
+#       run: echo "${{steps.extract_version.outputs.version}} ${{steps.extract_branch.outputs.branch}}"
 
-  build_pack_publish:
-    name: Build, pack and publish
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    needs: extract_version
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
+#   build_pack_publish:
+#     name: Build, pack and publish
+#     runs-on: ubuntu-latest
+#     timeout-minutes: 15
+#     needs: extract_version
+#     steps:
+#     - name: Checkout
+#       uses: actions/checkout@v2
 
-    - name: Set version
-      run: echo "VERSION=${{ needs.extract_version.outputs.version }}" >> $GITHUB_ENV
+#     - name: Set version
+#       run: echo "VERSION=${{ needs.extract_version.outputs.version }}" >> $GITHUB_ENV
     
-    - name: Build
-      run: dotnet build --configuration Release /p:Version=$VERSION
+#     - name: Build
+#       run: dotnet build --configuration Release /p:Version=$VERSION
     
-    - name: Pack
-      run: dotnet pack --configuration Release /p:Version=$VERSION --no-build --output .
+#     - name: Pack
+#       run: dotnet pack --configuration Release /p:Version=$VERSION --no-build --output .
     
-    - name: Show files
-      run: ls -la
+#     - name: Show files
+#       run: ls -la
     
-    - name: Publish
-      run: dotnet nuget push CQ.ApiElements.$VERSION.nupkg --source https://api.nuget.org/v3/index.json --api-key ${NUGET_API_KEY}
-      env:
-        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+#     - name: Publish
+#       run: dotnet nuget push CQ.ApiElements.$VERSION.nupkg --source https://api.nuget.org/v3/index.json --api-key ${NUGET_API_KEY}
+#       env:
+#         NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
