@@ -14,7 +14,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       pr_title: ${{ steps.extract_version.outputs.pr_title }}
-      pr_source: ${{ steps.extract_version.outputs.pr_source }}
     steps:
       - name: Extract Version
         id: extract_version
