@@ -9,29 +9,19 @@ public class ValidateItemAttribute(ContextItems Item)
     : BaseAttribute,
     IAuthorizationFilter
 {
-    private static IDictionary<Type, ErrorResponse>? _errors;
-
-    internal static IDictionary<Type, ErrorResponse> Errors
+    internal static IDictionary<Type, ErrorResponse> Errors { get; } = new Dictionary<Type, ErrorResponse>
     {
-        get
         {
-            _errors ??= new Dictionary<Type, ErrorResponse>
-                {
-                    {
-                        typeof(ContextItemNotFoundException),
-                        new ErrorResponse(
-                            HttpStatusCode.Unauthorized,
-                            "Unauthenticated",
-                            "Item not saved",
-                            string.Empty,
-                            "Missing item in context related to token sent"
-                            )
-                    }
-                };
-
-            return _errors;
+            typeof(ContextItemNotFoundException),
+            new ErrorResponse(
+                HttpStatusCode.Unauthorized,
+                "Unauthenticated",
+                "Item not saved",
+                string.Empty,
+                "Missing item in context related to token sent"
+                )
         }
-    }
+    };
 
     public void OnAuthorization(AuthorizationFilterContext context)
     {

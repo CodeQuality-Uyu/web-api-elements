@@ -11,66 +11,57 @@ public abstract class SecureAuthenticationAttribute
     : BaseAttribute,
     IAsyncAuthorizationFilter
 {
-    private static IDictionary<Type, ErrorResponse>? _errors;
-
-    internal static IDictionary<Type, ErrorResponse> Errors
+    internal static IDictionary<Type, ErrorResponse> Errors { get; } = new Dictionary<Type, ErrorResponse>
     {
-        get
         {
-            _errors ??= new Dictionary<Type, ErrorResponse>
+            typeof(MissingRequiredHeaderException),
+            new DynamicErrorResponse<MissingRequiredHeaderException>(
+                HttpStatusCode.Unauthorized,
+                "Unauthenticated",
+                (ex, context) => $"Missing header {ex.Header}"
+            )
             {
-                {
-                    typeof(MissingRequiredHeaderException),
-                    new DynamicErrorResponse<MissingRequiredHeaderException>(
-                        HttpStatusCode.Unauthorized,
-                        "Unauthenticated",
-                        (ex, context) => $"Missing header {ex.Header}"
-                    )
-                    {
-                        Description = "To use the endpoint a value must be send in header Authorization or PrivateKey"
-                    }
-                },
-                {
-                    typeof(InvalidHeaderException),
-                    new DynamicErrorResponse<InvalidHeaderException>(
-                        HttpStatusCode.Forbidden,
-                    "InvalidHeaderFormat",
-                    (ex, context) => $"Invalid format of {ex.Header}"
-                        )
-                },
-                {
-                    typeof(ExpiredHeaderException),
-                    new DynamicErrorResponse<ExpiredHeaderException>(
-                        HttpStatusCode.Unauthorized,
-                    "ExpiredHeader",
-                    (ex, context) => $"Header {ex.Header} is expired"
-                        )
-                },
-                {
-                    typeof(ArgumentNullException),
-                    new DynamicErrorResponse<ArgumentNullException>(
-                    HttpStatusCode.BadRequest,
-                    "RequestInvalid",
-                    (ex, context) => $"Missing or invalid {ex.ParamName}"
-                        )
-                }
-            };
-
-            return _errors;
+                Description = "To use the endpoint a value must be send in header Authorization or PrivateKey"
+            }
+        },
+        {
+            typeof(InvalidHeaderException),
+            new DynamicErrorResponse<InvalidHeaderException>(
+                HttpStatusCode.Forbidden,
+            "InvalidHeaderFormat",
+            (ex, context) => $"Invalid format of {ex.Header}"
+                )
+        },
+        {
+            typeof(ExpiredHeaderException),
+            new DynamicErrorResponse<ExpiredHeaderException>(
+                HttpStatusCode.Unauthorized,
+            "ExpiredHeader",
+            (ex, context) => $"Header {ex.Header} is expired"
+                )
+        },
+        {
+            typeof(ArgumentNullException),
+            new DynamicErrorResponse<ArgumentNullException>(
+            HttpStatusCode.BadRequest,
+            "RequestInvalid",
+            (ex, context) => $"Missing or invalid {ex.ParamName}"
+                )
         }
-    }
+    };
 
     public virtual async Task OnAuthorizationAsync(AuthorizationFilterContext context)
     {
         try
         {
+            var authorizationHeader = context.HttpContext.Request.Headers[HeaderNames.Authorization];
+
             var isFakeAuthActive = await IsFakeAuthActiveAsync(context).ConfigureAwait(false);
-            if (isFakeAuthActive)
+            if (isFakeAuthActive && Guard.IsNullOrEmpty(authorizationHeader))
             {
                 return;
             }
 
-            var authorizationHeader = context.HttpContext.Request.Headers[HeaderNames.Authorization];
             var privateKeyHeader = context.HttpContext.Request.Headers["PrivateKey"];
 
             if (Guard.IsNullOrEmpty(authorizationHeader) &&

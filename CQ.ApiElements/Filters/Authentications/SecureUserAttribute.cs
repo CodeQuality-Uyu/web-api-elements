@@ -1,7 +1,6 @@
 ﻿using CQ.ApiElements.Filters.ExceptionFilter;
 using CQ.ApiElements.Filters.Exceptions;
 using CQ.ApiElements.Filters.Extensions;
-using CQ.Utility;
 using Microsoft.AspNetCore.Mvc.Filters;
 using System.Net;
 
@@ -10,37 +9,23 @@ public abstract class SecureUserAttribute()
     : BaseAttribute,
     IAsyncAuthorizationFilter
 {
-    private static IDictionary<Type, ErrorResponse>? _errors;
-
-    internal static IDictionary<Type, ErrorResponse> Errors
+    internal static IDictionary<Type, ErrorResponse> Errors { get; }= new Dictionary<Type, ErrorResponse>
     {
-        get
         {
-            if (Guard.IsNull(_errors))
-            {
-                var contextItemNotFoundErrorResponse = ValidateItemAttribute.Errors[typeof(ContextItemNotFoundException)];
-                _errors = new Dictionary<Type, ErrorResponse>
-                {
-                    {
-                        typeof(ContextItemNotFoundException),
-                        contextItemNotFoundErrorResponse
-                    },
-                    {
-                        typeof(Exception),
-                        new ErrorResponse(
-                            HttpStatusCode.Unauthorized,
-                            "Unsync",
-                            "User for account not found",
-                            string.Empty,
-                            "Exist an account but not linked to an existent user"
-                            )
-                    }
-                };
-            }
-            
-            return _errors!;
+            typeof(ContextItemNotFoundException),
+            ValidateItemAttribute.Errors[typeof(ContextItemNotFoundException)]
+        },
+        {
+            typeof(Exception),
+            new ErrorResponse(
+                HttpStatusCode.Unauthorized,
+                "Unsync",
+                "User for account not found",
+                string.Empty,
+                "Exist an account but not linked to an existent user"
+                )
         }
-    }
+    };
 
     public virtual async Task OnAuthorizationAsync(AuthorizationFilterContext context)
     {

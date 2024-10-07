@@ -3,7 +3,6 @@ using CQ.ApiElements.Filters.ExceptionFilter;
 using CQ.ApiElements.Filters.Exceptions;
 using CQ.ApiElements.Filters.Extensions;
 using CQ.Exceptions;
-using CQ.Utility;
 using Microsoft.AspNetCore.Mvc.Filters;
 using System.Net;
 
@@ -14,20 +13,11 @@ public abstract class SecureAuthorizationAttribute(
     : BaseAttribute,
     IAsyncAuthorizationFilter
 {
-    internal static IDictionary<Type, ErrorResponse>? _errors;
-
-    internal static IDictionary<Type, ErrorResponse> Errors
-    {
-        get
-        {
-            if (Guard.IsNull(_errors))
-            {
-                var contextItemNotFoundErrorResponse = ValidateItemAttribute.Errors[typeof(ContextItemNotFoundException)];
-                _errors = new Dictionary<Type, ErrorResponse>
+    internal static IDictionary<Type, ErrorResponse>? Errors { get; } = new Dictionary<Type, ErrorResponse>
                 {
                     {
                         typeof(ContextItemNotFoundException),
-                        contextItemNotFoundErrorResponse
+                        ValidateItemAttribute.Errors[typeof(ContextItemNotFoundException)]
                     },
                     {
                         typeof(AccessDeniedException),
@@ -38,11 +28,6 @@ public abstract class SecureAuthorizationAttribute(
                             )
                     },
                 };
-            }
-
-            return _errors;
-        }
-    }
 
     public virtual async Task OnAuthorizationAsync(AuthorizationFilterContext context)
     {
