@@ -4,11 +4,13 @@ using CQ.ApiElements.Filters.Exceptions;
 using CQ.ApiElements.Filters.Extensions;
 using CQ.Exceptions;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.Net.Http.Headers;
 using System.Net;
+using System.Security.Principal;
 
 namespace CQ.ApiElements.Filters.Authorizations;
 
-public abstract class SecureAuthorizationAttribute(
+public class SecureAuthorizationAttribute(
     string? _permission = null)
     : BaseAttribute,
     IAsyncAuthorizationFilter
@@ -39,19 +41,17 @@ public abstract class SecureAuthorizationAttribute(
                 return;
             }
 
-            var accountIsNotLogged = context.GetItemOrDefault(ContextItems.AccountLogged) == null;
-            var systemIsNotLogged = context.GetItemOrDefault(ContextItems.ClientSystemLogged) == null;
+            var accountLogged = context.GetItemOrDefault(ContextItems.AccountLogged);
+            var systemLogged = context.GetItemOrDefault(ContextItems.ClientSystemLogged);
 
-            if (systemIsNotLogged && accountIsNotLogged)
+            if (Guard.IsNull(accountLogged) && Guard.IsNull(systemLogged))
             {
-                   ContextItemNotFoundException.Throw(ContextItems.AccountLogged);
+                ContextItemNotFoundException.Throw(ContextItems.AccountLogged);
             }
 
-            var accountIsLogged = context.GetItemOrDefault(ContextItems.AccountLogged) != null;
-
-            if (accountIsLogged)
+            if (Guard.IsNotNull(accountLogged))
             {
-                var authorizationHeader = context.HttpContext.Request.Headers["Authorization"];
+                var authorizationHeader = context.HttpContext.Request.Headers[HeaderNames.Authorization];
                 await AssertRequestPermissionsAsync(authorizationHeader, context).ConfigureAwait(false);
 
                 return;
@@ -112,9 +112,16 @@ public abstract class SecureAuthorizationAttribute(
         return _permission ?? $"{context.RouteData.Values["action"].ToString().ToLower()}-{context.RouteData.Values["controller"].ToString().ToLower()}";
     }
 
-    protected abstract Task<bool> HasRequestPermissionAsync(
+    protected virtual Task<bool> HasRequestPermissionAsync(
         string headerValue,
         string permission,
-        AuthorizationFilterContext context);
+        AuthorizationFilterContext context)
+    {
+        var accountLogged = context.GetItem<IPrincipal>(ContextItems.AccountLogged);
+
+        var hasPermissionAccount = accountLogged.IsInRole(permission);
+
+        return Task.FromResult(hasPermissionAccount);
+    }
     #endregion
 }

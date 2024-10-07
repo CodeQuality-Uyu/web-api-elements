@@ -3,6 +3,7 @@ using CQ.ApiElements.Filters.Exceptions;
 using CQ.ApiElements.Filters.Extensions;
 using Microsoft.AspNetCore.Mvc.Filters;
 using System.Net;
+using System.Security.Principal;
 
 namespace CQ.ApiElements.Filters.Authentications;
 public abstract class SecureUserAttribute()
@@ -37,9 +38,9 @@ public abstract class SecureUserAttribute()
                 return;
             }
 
-            context.GetItem(ContextItems.AccountLogged);
+            var accountLogged = context.GetItem<IPrincipal>(ContextItems.AccountLogged);
 
-            var userLogged = await GetUserLoggedAsync(context).ConfigureAwait(false);
+            var userLogged = await GetUserLoggedAsync(accountLogged).ConfigureAwait(false);
 
             context.SetItem(
                 ContextItems.UserLogged,
@@ -59,6 +60,6 @@ public abstract class SecureUserAttribute()
         }
     }
 
-    protected abstract Task<object> GetUserLoggedAsync(AuthorizationFilterContext context);
+    protected abstract Task<object> GetUserLoggedAsync(IPrincipal accountLogged);
 
 }

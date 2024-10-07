@@ -5,6 +5,7 @@ using CQ.Utility;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Net.Http.Headers;
 using System.Net;
+using System.Security.Principal;
 
 namespace CQ.ApiElements.Filters.Authentications;
 public abstract class SecureAuthenticationAttribute
@@ -56,7 +57,7 @@ public abstract class SecureAuthenticationAttribute
         {
             var authorizationHeader = context.HttpContext.Request.Headers[HeaderNames.Authorization];
 
-            var isFakeAuthActive = await IsFakeAuthActiveAsync(context).ConfigureAwait(false);
+            var isFakeAuthActive = IsFakeAuthActive(context);
             if (isFakeAuthActive && Guard.IsNullOrEmpty(authorizationHeader))
             {
                 return;
@@ -103,10 +104,9 @@ public abstract class SecureAuthenticationAttribute
         }
     }
 
-    private async Task<bool> IsFakeAuthActiveAsync(AuthorizationFilterContext context)
+    private bool IsFakeAuthActive(AuthorizationFilterContext context)
     {
-        var itemRequested = await GetFakeAuthAsync(context)
-                    .ConfigureAwait(false);
+        var itemRequested = GetFakeAuth(context);
 
         if (Guard.IsNull(itemRequested))
         {
@@ -120,9 +120,19 @@ public abstract class SecureAuthenticationAttribute
         return true;
     }
 
-    protected virtual Task<object?> GetFakeAuthAsync(AuthorizationFilterContext context)
+    private object? GetFakeAuth(AuthorizationFilterContext context)
     {
-        return Task.FromResult<object?>(null);
+        object? fakeAccount;
+        try
+        {
+            fakeAccount = context.GetService<IPrincipal>();
+        }
+        catch (Exception)
+        {
+            fakeAccount = null;
+        }
+
+        return fakeAccount;
     }
 
     private async Task HandleAuthenticationAsync(
