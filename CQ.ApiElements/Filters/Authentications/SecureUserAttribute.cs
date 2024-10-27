@@ -14,7 +14,7 @@ public abstract class SecureUserAttribute()
     {
         {
             typeof(ContextItemNotFoundException),
-            ValidateItemAttribute.Errors[typeof(ContextItemNotFoundException)]
+            SecureItemAttribute.Errors[typeof(ContextItemNotFoundException)]
         },
         {
             typeof(Exception),
@@ -32,12 +32,6 @@ public abstract class SecureUserAttribute()
     {
         try
         {
-            var existErrorOnPrevFilter = context.Result != null;
-            if (existErrorOnPrevFilter)
-            {
-                return;
-            }
-
             var accountLogged = context.GetItem<IPrincipal>(ContextItems.AccountLogged);
 
             var userLogged = await GetUserLoggedAsync(accountLogged).ConfigureAwait(false);

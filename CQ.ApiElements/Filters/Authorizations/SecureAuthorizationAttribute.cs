@@ -3,6 +3,7 @@ using CQ.ApiElements.Filters.ExceptionFilter;
 using CQ.ApiElements.Filters.Exceptions;
 using CQ.ApiElements.Filters.Extensions;
 using CQ.Exceptions;
+using CQ.Utility;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Net.Http.Headers;
 using System.Net;
@@ -19,7 +20,7 @@ public class SecureAuthorizationAttribute(
                 {
                     {
                         typeof(ContextItemNotFoundException),
-                        ValidateItemAttribute.Errors[typeof(ContextItemNotFoundException)]
+                        SecureItemAttribute.Errors[typeof(ContextItemNotFoundException)]
                     },
                     {
                         typeof(AccessDeniedException),
@@ -35,12 +36,6 @@ public class SecureAuthorizationAttribute(
     {
         try
         {
-            var existErrorOnPrevFilter = context.Result != null;
-            if (existErrorOnPrevFilter)
-            {
-                return;
-            }
-
             var accountLogged = context.GetItemOrDefault(ContextItems.AccountLogged);
             var systemLogged = context.GetItemOrDefault(ContextItems.ClientSystemLogged);
 

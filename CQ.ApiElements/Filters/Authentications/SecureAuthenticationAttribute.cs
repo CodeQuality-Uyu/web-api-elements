@@ -1,6 +1,7 @@
 ﻿using CQ.ApiElements.Filters.ExceptionFilter;
 using CQ.ApiElements.Filters.Exceptions;
 using CQ.ApiElements.Filters.Extensions;
+using CQ.AuthProvider.Abstractions;
 using CQ.Utility;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Net.Http.Headers;
@@ -8,7 +9,7 @@ using System.Net;
 using System.Security.Principal;
 
 namespace CQ.ApiElements.Filters.Authentications;
-public abstract class SecureAuthenticationAttribute
+public class SecureAuthenticationAttribute
     : BaseAttribute,
     IAsyncAuthorizationFilter
 {
@@ -196,12 +197,18 @@ public abstract class SecureAuthenticationAttribute
         }
     }
 
-    protected virtual Task<bool> IsFormatOfHeaderValidAsync(
+    protected virtual async Task<bool> IsFormatOfHeaderValidAsync(
         string header,
         string headerValue,
         AuthorizationFilterContext context)
     {
-        return Task.FromResult(true);
+        var tokenService = context.GetService<ITokenService>();
+
+        var validToken = await tokenService
+            .IsValidAsync(header, headerValue)
+            .ConfigureAwait(false);
+
+        return validToken;
     }
     #endregion
 
@@ -230,9 +237,18 @@ public abstract class SecureAuthenticationAttribute
         }
     }
 
-    protected abstract Task<object> GetItemByHeaderAsync(
+    protected virtual async Task<object> GetItemByHeaderAsync(
         string header,
         string headerValue,
-        AuthorizationFilterContext context);
+        AuthorizationFilterContext context)
+    {
+        var itemLoggedService = context.GetService<IItemLoggedService>();
+
+        var itemLogged = await itemLoggedService
+            .GetByHeaderAsync(header, headerValue)
+            .ConfigureAwait(false);
+
+        return itemLogged;
+    }
     #endregion
 }
