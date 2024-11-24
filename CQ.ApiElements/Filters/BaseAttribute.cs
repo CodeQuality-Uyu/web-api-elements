@@ -22,6 +22,14 @@ public class BaseAttribute : Attribute
         return errorResponse;
     }
 
+    protected static ObjectResult BuildResponse(ErrorResponse response)
+    {
+        return new ObjectResult(response)
+        {
+            StatusCode = (int)response.StatusCode
+        };
+    }
+
     public virtual IActionResult BuildErrorResponse(
         IDictionary<Type, ErrorResponse> errors,
         ExceptionThrownContext exceptionContext)
@@ -31,9 +39,7 @@ public class BaseAttribute : Attribute
         var errorBody = BuildUnexpectedErrorResponse(exceptionContext.Exception);
         if (Guard.IsNotNull(error))
         {
-            errorBody = error.Value;
-
-            errorBody = errorBody.CompileErrorResponse(exceptionContext);
+            errorBody = error.Value.CompileErrorResponse(exceptionContext);
         }
 
         return new ObjectResult(errorBody)

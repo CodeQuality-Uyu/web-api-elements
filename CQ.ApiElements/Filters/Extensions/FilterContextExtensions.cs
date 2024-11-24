@@ -14,14 +14,14 @@ public static class FilterContextExtensions
 
     public static object GetItem(
         this FilterContext context,
-        ContextItems item)
+        ContextItem item)
     {
         return context.HttpContext.GetItem(item);
     }
 
     public static TItem GetItem<TItem>(
         this FilterContext context,
-        ContextItems item)
+        ContextItem item)
         where TItem : class
     {
         return context.HttpContext.GetItem<TItem>(item);
@@ -29,7 +29,7 @@ public static class FilterContextExtensions
 
     public static TItem? GetItemOrDefault<TItem>(
         this FilterContext context,
-        ContextItems item)
+        ContextItem item)
         where TItem : class
     {
         return context.HttpContext.GetItemOrDefault<TItem>(item);
@@ -37,14 +37,14 @@ public static class FilterContextExtensions
 
     public static object? GetItemOrDefault(
         this FilterContext context,
-        ContextItems item)
+        ContextItem item)
     {
         return context.HttpContext.GetItemOrDefault(item);
     }
 
     public static void SetItem(
         this FilterContext context,
-        ContextItems item,
+        ContextItem item,
         object value)
     {
         context.HttpContext.Items[item] = value;

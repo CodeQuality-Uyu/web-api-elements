@@ -1,28 +1,13 @@
 ﻿using CQ.ApiElements.Filters.ExceptionFilter;
-using CQ.ApiElements.Filters.Exceptions;
 using CQ.ApiElements.Filters.Extensions;
 using Microsoft.AspNetCore.Mvc.Filters;
 using System.Net;
 
 namespace CQ.ApiElements.Filters.Authentications;
-public class SecureItemAttribute(ContextItems Item)
+public class SecureItemAttribute(ContextItem Item)
     : BaseAttribute,
     IAuthorizationFilter
 {
-    internal static IDictionary<Type, ErrorResponse> Errors { get; } = new Dictionary<Type, ErrorResponse>
-    {
-        {
-            typeof(ContextItemNotFoundException),
-            new ErrorResponse(
-                HttpStatusCode.Unauthorized,
-                "Unauthenticated",
-                "Item not saved",
-                string.Empty,
-                "Missing item in context related to token sent"
-                )
-        }
-    };
-
     public void OnAuthorization(AuthorizationFilterContext context)
     {
         try
@@ -31,15 +16,15 @@ public class SecureItemAttribute(ContextItems Item)
         }
         catch (Exception ex)
         {
-            var exceptionContext = new ExceptionThrownContext(
-                context,
-                ex,
+            var error = new ErrorResponse(
+                HttpStatusCode.Unauthorized,
+                "Unauthenticated",
+                "Item not saved",
                 string.Empty,
-                string.Empty);
+                "Missing item in context related to token sent",
+                ex);
 
-            context.Result = BuildErrorResponse(
-                Errors,
-                exceptionContext);
+            context.Result = BuildResponse(error);
         }
     }
 }

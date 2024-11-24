@@ -3,59 +3,34 @@ using CQ.ApiElements.Filters.Exceptions;
 using CQ.ApiElements.Filters.Extensions;
 using CQ.AuthProvider.Abstractions;
 using CQ.Utility;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Net.Http.Headers;
+using System;
 using System.Net;
 using System.Security.Principal;
 
 namespace CQ.ApiElements.Filters.Authentications;
-public class SecureAuthenticationAttribute
+
+public abstract class SecureAuthenticationAttribute
+    <TokenService, ItemLoggedService>(
+    ContextItem ContextItem = ContextItem.AccountLogged,
+    string AuthorizationType = "Bearer")
     : BaseAttribute,
     IAsyncAuthorizationFilter
+    where TokenService : class, ITokenService
+    where ItemLoggedService : class, IItemLoggedService
 {
-    internal static IDictionary<Type, ErrorResponse> Errors { get; } = new Dictionary<Type, ErrorResponse>
-    {
-        {
-            typeof(MissingRequiredHeaderException),
-            new DynamicErrorResponse<MissingRequiredHeaderException>(
-                HttpStatusCode.Unauthorized,
-                "Unauthenticated",
-                (ex, context) => $"Missing header {ex.Header}"
-            )
-            {
-                Description = "To use the endpoint a value must be send in header Authorization or PrivateKey"
-            }
-        },
-        {
-            typeof(InvalidHeaderException),
-            new DynamicErrorResponse<InvalidHeaderException>(
-                HttpStatusCode.Forbidden,
-            "InvalidHeaderFormat",
-            (ex, context) => $"Invalid format of {ex.Header}"
-                )
-        },
-        {
-            typeof(ExpiredHeaderException),
-            new DynamicErrorResponse<ExpiredHeaderException>(
-                HttpStatusCode.Unauthorized,
-            "ExpiredHeader",
-            (ex, context) => $"Header {ex.Header} is expired"
-                )
-        },
-        {
-            typeof(ArgumentNullException),
-            new DynamicErrorResponse<ArgumentNullException>(
-            HttpStatusCode.BadRequest,
-            "RequestInvalid",
-            (ex, context) => $"Missing or invalid {ex.ParamName}"
-                )
-        }
-    };
-
     public virtual async Task OnAuthorizationAsync(AuthorizationFilterContext context)
     {
         try
         {
+            var isAuthenticated = context.GetItemOrDefault(ContextItem.IsAuthenticated);
+            if (Guard.IsNotNull(isAuthenticated) || ItemIsLogged(context))
+            {
+                return;
+            }
+
             var authorizationHeader = context.HttpContext.Request.Headers[HeaderNames.Authorization];
 
             var isFakeAuthActive = IsFakeAuthActive(context);
@@ -64,47 +39,41 @@ public class SecureAuthenticationAttribute
                 return;
             }
 
-            var privateKeyHeader = context.HttpContext.Request.Headers["PrivateKey"];
-
-            if (Guard.IsNullOrEmpty(authorizationHeader) &&
-                Guard.IsNullOrEmpty(privateKeyHeader))
+            if (Guard.IsNullOrEmpty(authorizationHeader))
             {
-                MissingRequiredHeaderException.Throw($"{HeaderNames.Authorization} or PrivateKey");
-            }
+                var errorResponse = new ErrorResponse(
+                    HttpStatusCode.Unauthorized,
+                    "Unauthenticated",
+                    "Missing Authorization header",
+                    string.Empty,
+                    "The endpoint is protected with authorization (needs to be sent Authorization header)",
+                    null
+                    );
 
-            if (Guard.IsNotNullOrEmpty(authorizationHeader))
-            {
-                await HandleAuthenticationAsync(
-                    HeaderNames.Authorization,
-                    authorizationHeader,
-                    ContextItems.AccountLogged,
-                    context)
-                    .ConfigureAwait(false);
-
+                context.Result = BuildResponse(errorResponse);
                 return;
             }
 
-            await HandleAuthenticationAsync(
-                "PrivateKey",
-                privateKeyHeader,
-                ContextItems.ClientSystemLogged,
-                context)
+            var isValid = authorizationHeader.Contains(AuthorizationType);
+            if (!isValid)
+            {
+                BuildInvalidHeaderFormat(context);
+                return;
+            }
+
+            await HandleAuthenticationAsync(authorizationHeader, context)
                 .ConfigureAwait(false);
+            context.SetItem(ContextItem.IsAuthenticated, true);
         }
         catch (Exception ex)
         {
-            var exceptionContext = new ExceptionThrownContext(
-                context,
-                ex,
-                string.Empty,
-                string.Empty);
-
-            context.Result = BuildErrorResponse(
-                Errors,
-                exceptionContext);
+            var error = BuildUnexpectedErrorResponse(ex);
+            var response = BuildResponse(error);
+            context.Result = response;
         }
     }
 
+    #region Fake Authenticatino
     private bool IsFakeAuthActive(AuthorizationFilterContext context)
     {
         var itemRequested = GetFakeAuth(context);
@@ -115,7 +84,7 @@ public class SecureAuthenticationAttribute
         }
 
         context.SetItem(
-            ContextItems.AccountLogged,
+            ContextItem,
             itemRequested!);
 
         return true;
@@ -135,120 +104,97 @@ public class SecureAuthenticationAttribute
 
         return fakeAccount;
     }
+    #endregion
+
+    private static void BuildInvalidHeaderFormat(AuthorizationFilterContext context)
+    {
+        var errorResponse = new ErrorResponse(
+                    HttpStatusCode.Forbidden,
+                    "InvalidHeaderFormat",
+                    "Invalid Authorization Header",
+                    string.Empty,
+                    "The value of Authorization header is incorrect for the authorization type setted for the endpoint",
+                    null
+                    );
+
+        context.Result = BuildResponse(errorResponse);
+    }
 
     private async Task HandleAuthenticationAsync(
-        string header,
         string headerValue,
-        ContextItems item,
         AuthorizationFilterContext context)
     {
-        if (ItemIsLogged(item, context))
+        var isValid = await IsFormatOfHeaderValidAsync(
+                headerValue,
+                context)
+                .ConfigureAwait(false);
+        if (!isValid)
         {
-            return;
+            BuildInvalidHeaderFormat(context);
         }
 
-        await AssertHeaderFormatAsync(
-            header,
-            headerValue,
-            context)
-            .ConfigureAwait(false);
-
-        var itemRequested = await AssertGetItemAsync(
-           header,
+        var itemRequested = await GetItemAsync(
            headerValue,
            context)
            .ConfigureAwait(false);
+        if (itemRequested.error != null)
+        {
+            var errorResponse = new ErrorResponse(
+                HttpStatusCode.Unauthorized,
+                "AuthorizationExpired",
+                "Authorization is expired",
+                string.Empty,
+                "The authorization expired",
+                itemRequested.error
+                );
+
+            context.Result = BuildResponse(errorResponse);
+            return;
+        }
 
         context.SetItem(
-            item,
-            itemRequested);
+            ContextItem,
+            itemRequested.item);
     }
+
 
     #region Assert header
-    private static bool ItemIsLogged(
-        ContextItems item,
-        AuthorizationFilterContext context)
+    protected bool ItemIsLogged(AuthorizationFilterContext context)
     {
-        return context.GetItemOrDefault(item) != null;
-    }
-
-    private async Task AssertHeaderFormatAsync(
-        string header,
-        string headerValue,
-        AuthorizationFilterContext context)
-    {
-        bool isFormatValid;
-        try
-        {
-            isFormatValid = await IsFormatOfHeaderValidAsync(
-                header,
-                headerValue,
-                context)
-                .ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            throw new InvalidHeaderException(header, headerValue, ex);
-        }
-
-        if (!isFormatValid)
-        {
-            throw new InvalidHeaderException(header, headerValue);
-        }
+        return context.GetItemOrDefault(ContextItem) != null;
     }
 
     protected virtual async Task<bool> IsFormatOfHeaderValidAsync(
-        string header,
         string headerValue,
         AuthorizationFilterContext context)
     {
-        var tokenService = context.GetService<ITokenService>();
+        var tokenService = context.GetService<TokenService>();
 
-        var validToken = await tokenService
-            .IsValidAsync(header, headerValue)
+        var isValidToken = await tokenService
+            .IsValidAsync(headerValue)
             .ConfigureAwait(false);
 
-        return validToken;
+        return isValidToken;
     }
     #endregion
 
-    #region Get request
-    private async Task<object> AssertGetItemAsync(
-        string header,
+    private async Task<(object? item, Exception? error)> GetItemAsync(
         string headerValue,
         AuthorizationFilterContext context)
     {
         try
         {
-            var item = await GetItemByHeaderAsync(
-                header,
-                headerValue,
-                context)
+            var itemLoggedService = context.GetService<ItemLoggedService>();
+
+            var itemLogged = await itemLoggedService
+                .GetByHeaderAsync(headerValue)
                 .ConfigureAwait(false);
 
-            return item;
+            return (itemLogged, null);
         }
         catch (Exception ex)
         {
-            throw new ExpiredHeaderException(
-                header,
-                headerValue,
-                ex);
+            return (null, ex);
         }
     }
-
-    protected virtual async Task<object> GetItemByHeaderAsync(
-        string header,
-        string headerValue,
-        AuthorizationFilterContext context)
-    {
-        var itemLoggedService = context.GetService<IItemLoggedService>();
-
-        var itemLogged = await itemLoggedService
-            .GetByHeaderAsync(header, headerValue)
-            .ConfigureAwait(false);
-
-        return itemLogged;
-    }
-    #endregion
 }

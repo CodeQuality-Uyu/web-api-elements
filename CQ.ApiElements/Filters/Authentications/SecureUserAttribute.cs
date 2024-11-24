@@ -1,59 +1,31 @@
-﻿using CQ.ApiElements.Filters.ExceptionFilter;
-using CQ.ApiElements.Filters.Exceptions;
-using CQ.ApiElements.Filters.Extensions;
+﻿using CQ.ApiElements.Filters.Extensions;
 using Microsoft.AspNetCore.Mvc.Filters;
-using System.Net;
 using System.Security.Principal;
 
 namespace CQ.ApiElements.Filters.Authentications;
-public abstract class SecureUserAttribute()
+public abstract class SecureUserAttribute(ContextItem ContextItem = ContextItem.UserLogged)
     : BaseAttribute,
     IAsyncAuthorizationFilter
 {
-    internal static IDictionary<Type, ErrorResponse> Errors { get; }= new Dictionary<Type, ErrorResponse>
-    {
-        {
-            typeof(ContextItemNotFoundException),
-            SecureItemAttribute.Errors[typeof(ContextItemNotFoundException)]
-        },
-        {
-            typeof(Exception),
-            new ErrorResponse(
-                HttpStatusCode.Unauthorized,
-                "Unsync",
-                "User for account not found",
-                string.Empty,
-                "Exist an account but not linked to an existent user"
-                )
-        }
-    };
-
     public virtual async Task OnAuthorizationAsync(AuthorizationFilterContext context)
     {
         try
         {
-            var accountLogged = context.GetItem<IPrincipal>(ContextItems.AccountLogged);
+            var accountLogged = context.GetItem<IPrincipal>(ContextItem.AccountLogged);
 
             var userLogged = await GetUserLoggedAsync(accountLogged).ConfigureAwait(false);
 
             context.SetItem(
-                ContextItems.UserLogged,
+                ContextItem,
                 userLogged);
         }
         catch (Exception ex)
         {
-            var exceptionContext = new ExceptionThrownContext(
-                context,
-                ex,
-                string.Empty,
-                string.Empty);
-
-            context.Result = BuildErrorResponse(
-                Errors,
-                exceptionContext);
+            var error = BuildUnexpectedErrorResponse(ex);
+            var response = BuildResponse(error);
+            context.Result = response;
         }
     }
 
     protected abstract Task<object> GetUserLoggedAsync(IPrincipal accountLogged);
-
 }
