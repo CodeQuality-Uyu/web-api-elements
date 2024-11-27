@@ -8,7 +8,7 @@ public static class HttpContextExtensions
 {
     public static TResult GetItem<TResult>(
         this HttpContext context,
-        ContextItems item)
+        ContextItem item)
         where TResult : class
     {
         var element = GetItem(context, item);
@@ -18,7 +18,7 @@ public static class HttpContextExtensions
 
     public static object GetItem(
         this HttpContext context,
-        ContextItems item)
+        ContextItem item)
     {
         var element = context.Items[item];
 
@@ -32,7 +32,7 @@ public static class HttpContextExtensions
 
     public static TResult GetItemOrDefault<TResult>(
         this HttpContext context,
-        ContextItems item)
+        ContextItem item)
         where TResult : class
     {
         var element = context.Items[item];
@@ -42,7 +42,7 @@ public static class HttpContextExtensions
 
     public static object? GetItemOrDefault(
         this HttpContext context,
-        ContextItems item)
+        ContextItem item)
     {
         var element = context.Items[item];
 

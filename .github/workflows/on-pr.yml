@@ -4,7 +4,8 @@ on:
   pull_request:
     branches:
       [
-        main
+        exception,
+        web-api-element
       ]
 
 env:
@@ -12,7 +13,7 @@ env:
 
 jobs:
   build:
-    name: Build
+    name: Build Nuget Package
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -25,14 +26,15 @@ jobs:
 
       - name: Determine Package Name
         run: |
-          if [ "${{ github.head_ref }}" == "exception" ]; then
+          if [ "${{ github.base_ref }}" == "exception" ]; then
             PACKAGE_NAME="CQ.Exceptions"
-          elif [ "${{ github.head_ref }}" == "web-api-element" ]; then
+          elif [ "${{ github.base_ref }}" == "web-api-element" ]; then
             PACKAGE_NAME="CQ.ApiElements"
           else
             echo "Unknown branch. Exiting."
             exit 1
           fi
+
           echo "Package Name: $PACKAGE_NAME"
 
           echo "package_name=$PACKAGE_NAME" >> $GITHUB_ENV

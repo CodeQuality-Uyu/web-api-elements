@@ -4,9 +4,10 @@
 		<TargetFramework>net8.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
-		<Version>3.0.14</Version>
+		<Version>3.0.17</Version>
 	</PropertyGroup>
 	<ItemGroup>
+		<PackageReference Include="CQ.AuthProvider.Abstractions" Version="1.0.4" />
 		<PackageReference Include="CQ.Extensions.ServiceCollection" Version="2.0.2" />
 		<PackageReference Include="CQ.Extensions.Environments" Version="2.0.2" />
 		<PackageReference Include="CQ.Exceptions" Version="3.0.0" />

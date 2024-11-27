@@ -4,9 +4,9 @@ using System.Net;
 namespace CQ.ApiElements.Filters.ExceptionFilter;
 public class ExceptionStoreService
 {
-    public readonly IDictionary<OriginError, ExceptionsOfOrigin> SpecificExceptions = new Dictionary<OriginError, ExceptionsOfOrigin>();
+    public static readonly IDictionary<OriginError, ExceptionsOfOrigin> SpecificExceptions = new Dictionary<OriginError, ExceptionsOfOrigin>();
 
-    public readonly IDictionary<Type, ErrorResponse> GenericExceptions = new Dictionary<Type, ErrorResponse>();
+    public static readonly IDictionary<Type, ErrorResponse> GenericExceptions = new Dictionary<Type, ErrorResponse>();
 
     public ExceptionStoreService()
     {

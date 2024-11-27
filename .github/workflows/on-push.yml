@@ -4,7 +4,8 @@ on:
   push:
     branches:
       [
-        main
+        exception,
+        web-api-element
       ]
 
 jobs:
@@ -13,18 +14,14 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       pr_title: ${{ steps.extract_version.outputs.pr_title }}
-      pr_source: ${{ steps.extract_version.outputs.pr_source }}
     steps:
       - name: Extract Version
         id: extract_version
         run: |
           # Get the last merged PR for the head branch
           API_RESPONSE=$(curl -s -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/repos/${{github.repository}}/pulls?state=closed&base=main&sort=updated&direction=desc&per_page=1")
-
-          # Debugging: Check if the API_RESPONSE is a string or a JSON array
-          echo "$API_RESPONSE" | jq '.'
-
+            "https://api.github.com/repos/${{github.repository}}/pulls?state=closed&base=${{ github.ref_name }}&sort=updated&direction=desc&per_page=1")
+          
           # Extract the last PR JSON object
           LAST_PR=$(echo "$API_RESPONSE" | jq -r 'map(select(.merged_at != null))[0]')
           echo "Last PR JSON: $LAST_PR"
@@ -34,12 +31,9 @@ jobs:
           SOURCE_PR=$(echo "$LAST_PR" | jq -r '.head.ref')
 
           echo "Last Merged PR Title: $LAST_PR_TITLE"
-          echo "Source PR: $SOURCE_PR"
-
           echo "::set-output name=pr_title::$LAST_PR_TITLE"
-          echo "::set-output name=pr_source::$SOURCE_PR"
 
-  build_pack_publish:
+  pack_publish:
     name: Pack and Publish
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -50,12 +44,10 @@ jobs:
 
       - name: Determine Package Name
         run: |
-          if [ "${{ needs.get_version.outputs.pr_source }}" == "exception" ]; then
+          if [ "${{ github.ref_name }}"  == "exception" ]; then
             PACKAGE_NAME="CQ.Exceptions"
-          elif [ "${{ needs.get_version.outputs.pr_source }}" == "web-api-element" ]; then
+          elif [ "${{ github.ref_name }}" == "web-api-element" ]; then
             PACKAGE_NAME="CQ.ApiElements"
-          elif [ "${{ needs.get_version.outputs.pr_source }}" == "configuration" ]; then
-            PACKAGE_NAME="CQ.Extensions.Configuration"
           else
             echo "Unknown branch. Exiting."
             exit 1

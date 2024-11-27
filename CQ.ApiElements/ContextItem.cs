@@ -1,8 +1,9 @@
 ﻿
 namespace CQ.ApiElements;
-public enum ContextItems
+public enum ContextItem
 {
     AccountLogged,
     ClientSystemLogged,
-    UserLogged
+    UserLogged,
+    IsAuthenticated
 }

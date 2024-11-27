@@ -1,7 +1,10 @@
 ﻿using CQ.ApiElements.Filters.ExceptionFilter;
+using CQ.AuthProvider.Abstractions;
 using CQ.Extensions.ServiceCollection;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using System.Security.Principal;
 
 namespace CQ.ApiElements.AppConfig;
 public static class ApiElementsConfig
@@ -40,6 +43,39 @@ public static class ApiElementsConfig
             .AddService<ExceptionStoreService, TExceptionStore>(storeLifeTime)
             .AddService<TExceptionStore>(storeLifeTime)
             ;
+
+        return services;
+    }
+
+    public static IServiceCollection AddFakeAuthentication<TPrincipal>(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        string fakeAuthenticationKey = "Authentication:Fake",
+        LifeTime fakeAuthenticationLifeTime = LifeTime.Scoped)
+        where TPrincipal : IPrincipal
+    {
+        TPrincipal val = configuration.GetSection(fakeAuthenticationKey).Get<TPrincipal>();
+        services.AddService((IPrincipal)val, fakeAuthenticationLifeTime);
+
+        return services;
+    }
+
+    public static IServiceCollection AddTokenService<TService>(
+        this IServiceCollection services,
+        LifeTime tokenServiceLifeTime)
+        where TService : class, ITokenService
+    {
+        services.AddService<ITokenService, TService>(tokenServiceLifeTime);
+
+        return services;
+    }
+
+    public static IServiceCollection AddItemLoggedService<TService>(
+        this IServiceCollection services,
+        LifeTime itemLoggedServiceLifeTime)
+        where TService : class, IItemLoggedService
+    {
+        services.AddService<IItemLoggedService, TService>(itemLoggedServiceLifeTime);
 
         return services;
     }
