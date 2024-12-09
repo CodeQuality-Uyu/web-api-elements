@@ -51,9 +51,17 @@ public static class ApiElementsConfig
         this IServiceCollection services,
         IConfiguration configuration,
         string fakeAuthenticationKey = "Authentication:Fake",
+        string fakeAuthenticationActiveKey = "Authentication:Fake:IsActive",
         LifeTime fakeAuthenticationLifeTime = LifeTime.Scoped)
         where TPrincipal : IPrincipal
     {
+        var isActive = configuration.GetValue<bool>(fakeAuthenticationActiveKey);
+
+        if (!isActive)
+        {
+            return services;
+        }
+
         TPrincipal val = configuration.GetSection(fakeAuthenticationKey).Get<TPrincipal>();
         services.AddService((IPrincipal)val, fakeAuthenticationLifeTime);
 
