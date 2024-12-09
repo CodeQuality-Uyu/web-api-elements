@@ -19,12 +19,6 @@ public class SecureAuthorizationAttribute(
         try
         {
             var accountLogged = context.GetItemOrDefault(ContextItem);
-            var isLogged = context.GetItemOrDefault(ContextItem.IsAuthenticated);
-
-            if(Guard.IsNull(accountLogged) && Guard.IsNotNull(isLogged))
-            {
-                return;
-            }
 
             if (Guard.IsNull(accountLogged))
             {

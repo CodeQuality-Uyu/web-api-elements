@@ -16,14 +16,7 @@ public class SecureItemAttribute(ContextItem Item)
         }
         catch (Exception ex)
         {
-            var error = new ErrorResponse(
-                HttpStatusCode.Unauthorized,
-                "Unauthenticated",
-                "Item not saved",
-                string.Empty,
-                "Missing item in context related to token sent",
-                ex);
-
+            var error = BuildUnexpectedErrorResponse(ex);
             context.Result = BuildResponse(error);
         }
     }
