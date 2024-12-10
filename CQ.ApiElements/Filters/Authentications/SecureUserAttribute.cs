@@ -26,8 +26,5 @@ public abstract class SecureUserAttribute
         }
     }
 
-    protected virtual Task<object> GetUserLoggedAsync(IPrincipal accountLogged)
-    {
-        return Task.FromResult((object)accountLogged);
-    }
+    protected abstract Task<object> GetUserLoggedAsync(IPrincipal accountLogged);
 }

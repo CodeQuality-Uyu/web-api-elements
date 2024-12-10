@@ -1,6 +1,7 @@
 ﻿using CQ.ApiElements.Filters.ExceptionFilter;
 using CQ.AuthProvider.Abstractions;
 using CQ.Extensions.ServiceCollection;
+using CQ.Utility;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,7 +27,7 @@ public static class ApiElementsConfig
 
     public static IServiceCollection AddExceptionGlobalHandlerService(
         this IServiceCollection services,
-        LifeTime storeLifeTime)
+        LifeTime storeLifeTime = LifeTime.Scoped)
     {
         services
             .AddService<ExceptionStoreService>(storeLifeTime);
@@ -36,11 +37,26 @@ public static class ApiElementsConfig
 
     public static IServiceCollection AddExceptionGlobalHandlerService<TExceptionStore>(
         this IServiceCollection services,
-        LifeTime storeLifeTime)
+        LifeTime storeLifeTime = LifeTime.Scoped)
         where TExceptionStore : ExceptionStoreService
     {
         services
             .AddService<ExceptionStoreService, TExceptionStore>(storeLifeTime)
+            .AddService<TExceptionStore>(storeLifeTime)
+            ;
+
+        return services;
+    }
+
+    public static IServiceCollection AddExceptionGlobalHandlerService<TIExceptionStore, TExceptionStore>(
+        this IServiceCollection services,
+        LifeTime storeLifeTime = LifeTime.Scoped)
+        where TIExceptionStore : class
+        where TExceptionStore : ExceptionStoreService, TIExceptionStore
+    {
+        services
+            .AddService<ExceptionStoreService, TExceptionStore>(storeLifeTime)
+            .AddService<TIExceptionStore, TExceptionStore>(storeLifeTime)
             .AddService<TExceptionStore>(storeLifeTime)
             ;
 
@@ -62,8 +78,11 @@ public static class ApiElementsConfig
             return services;
         }
 
-        TPrincipal val = configuration.GetSection(fakeAuthenticationKey).Get<TPrincipal>();
-        services.AddService((IPrincipal)val, fakeAuthenticationLifeTime);
+        var val = configuration.GetSection(fakeAuthenticationKey).Get<TPrincipal>();
+
+        Guard.ThrowIsNull(val, fakeAuthenticationKey);
+
+        services.AddService((IPrincipal)val!, fakeAuthenticationLifeTime);
 
         return services;
     }

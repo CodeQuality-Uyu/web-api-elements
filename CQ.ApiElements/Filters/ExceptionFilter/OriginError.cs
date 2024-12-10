@@ -1,3 +1,5 @@
 ﻿namespace CQ.ApiElements.Filters.ExceptionFilter;
 
-public sealed record class OriginError(string ControllerName, string Action);
+public sealed record OriginError(
+    string ControllerName,
+    string Action);

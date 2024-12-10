@@ -1,5 +1,4 @@
 ﻿using CQ.ApiElements.Filters.ExceptionFilter;
-using CQ.Utility;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 
@@ -27,24 +26,6 @@ public class BaseAttribute : Attribute
         return new ObjectResult(response)
         {
             StatusCode = (int)response.StatusCode
-        };
-    }
-
-    public virtual IActionResult BuildErrorResponse(
-        IDictionary<Type, ErrorResponse> errors,
-        ExceptionThrownContext exceptionContext)
-    {
-        var error = errors.FirstOrDefault(e => e.Key == exceptionContext.Exception.GetType());
-
-        var errorBody = BuildUnexpectedErrorResponse(exceptionContext.Exception);
-        if (Guard.IsNotNull(error))
-        {
-            errorBody = error.Value.CompileErrorResponse(exceptionContext);
-        }
-
-        return new ObjectResult(errorBody)
-        {
-            StatusCode = (int)errorBody.StatusCode
         };
     }
 }

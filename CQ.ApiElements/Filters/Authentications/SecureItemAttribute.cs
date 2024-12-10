@@ -1,5 +1,4 @@
-﻿using CQ.ApiElements.Filters.ExceptionFilter;
-using CQ.ApiElements.Filters.Extensions;
+﻿using CQ.ApiElements.Filters.Extensions;
 using Microsoft.AspNetCore.Mvc.Filters;
 using System.Net;
 

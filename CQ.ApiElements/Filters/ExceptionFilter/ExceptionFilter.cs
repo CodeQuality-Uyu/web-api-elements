@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace CQ.ApiElements.Filters.ExceptionFilter;
 
-public class ExceptionFilter(ExceptionStoreService exceptionStoreService)
+public class ExceptionFilter(ExceptionStoreService _exceptionStoreService)
     : BaseAttribute,
     IExceptionFilter
 {
@@ -25,7 +25,7 @@ public class ExceptionFilter(ExceptionStoreService exceptionStoreService)
     {
         var customContext = BuildThrownContext(context);
 
-        var errorResponse = exceptionStoreService.HandleException(customContext);
+        var errorResponse = _exceptionStoreService.HandleException(customContext);
 
         return errorResponse ??
             BuildUnexpectedErrorResponse(context.Exception);
