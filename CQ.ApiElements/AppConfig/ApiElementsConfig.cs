@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Security.Principal;
 
 namespace CQ.ApiElements.AppConfig;
+
 public static class ApiElementsConfig
 {
     public static MvcOptions AddExceptionGlobalHandler(this MvcOptions options)
