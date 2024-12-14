@@ -14,8 +14,7 @@ namespace CQ.ApiElements.Filters.Authentications;
 
 public abstract class SecureAuthenticationAttribute
     <TokenService, ItemLoggedService>(
-    ContextItem ContextItem = ContextItem.AccountLogged,
-    string AuthorizationType = "Bearer")
+    params string[] AuthorizationTypes)
     : BaseAttribute,
     IAsyncAuthorizationFilter
     where TokenService : class, ITokenService
@@ -25,12 +24,6 @@ public abstract class SecureAuthenticationAttribute
     {
         try
         {
-            var isAuthenticated = context.GetItemOrDefault(ContextItem.IsAuthenticated);
-            if (Guard.IsNotNull(isAuthenticated) || ItemIsLogged(context))
-            {
-                return;
-            }
-
             var authorizationHeader = context.HttpContext.Request.Headers[HeaderNames.Authorization];
 
             var isFakeAuthActive = IsFakeAuthActive(context);
@@ -54,7 +47,7 @@ public abstract class SecureAuthenticationAttribute
                 return;
             }
 
-            var isValid = authorizationHeader.Contains(AuthorizationType);
+            var isValid = AuthorizationTypes.Any(a => authorizationHeader.Contains(a));
             if (!isValid)
             {
                 BuildInvalidHeaderFormat(context);
@@ -63,7 +56,6 @@ public abstract class SecureAuthenticationAttribute
 
             await HandleAuthenticationAsync(authorizationHeader, context)
                 .ConfigureAwait(false);
-            context.SetItem(ContextItem.IsAuthenticated, true);
         }
         catch (Exception ex)
         {
@@ -76,7 +68,7 @@ public abstract class SecureAuthenticationAttribute
     #region Fake Authenticatino
     private bool IsFakeAuthActive(AuthorizationFilterContext context)
     {
-        var itemRequested = GetFakeAuth(context);
+        var itemRequested = GetFakeAuthOrDefault(context);
 
         if (Guard.IsNull(itemRequested))
         {
@@ -84,15 +76,15 @@ public abstract class SecureAuthenticationAttribute
         }
 
         context.SetItem(
-            ContextItem,
+            ContextItem.AccountLogged,
             itemRequested!);
 
         return true;
     }
 
-    private object? GetFakeAuth(AuthorizationFilterContext context)
+    private object? GetFakeAuthOrDefault(AuthorizationFilterContext context)
     {
-        object? fakeAccount;
+        IPrincipal? fakeAccount;
         try
         {
             fakeAccount = context.GetService<IPrincipal>();
@@ -153,17 +145,12 @@ public abstract class SecureAuthenticationAttribute
         }
 
         context.SetItem(
-            ContextItem,
+            ContextItem.AccountLogged,
             itemRequested.item);
     }
 
 
     #region Assert header
-    protected bool ItemIsLogged(AuthorizationFilterContext context)
-    {
-        return context.GetItemOrDefault(ContextItem) != null;
-    }
-
     protected virtual async Task<bool> IsFormatOfHeaderValidAsync(
         string headerValue,
         AuthorizationFilterContext context)

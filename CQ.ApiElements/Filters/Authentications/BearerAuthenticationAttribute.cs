@@ -7,5 +7,8 @@ namespace CQ.ApiElements.Filters.Authentications
         : SecureAuthenticationAttribute
         <IBearerTokenService, IBearerLoggedService>
     {
+        public BearerAuthenticationAttribute() : base("Bearer")
+        {
+        }
     }
 }

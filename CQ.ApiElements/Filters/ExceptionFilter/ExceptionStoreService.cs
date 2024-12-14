@@ -4,9 +4,9 @@ using System.Net;
 namespace CQ.ApiElements.Filters.ExceptionFilter;
 public class ExceptionStoreService
 {
-    public static readonly IDictionary<OriginError, ExceptionsOfOrigin> SpecificExceptions = new Dictionary<OriginError, ExceptionsOfOrigin>();
+    public readonly IDictionary<OriginError, ExceptionsOfOrigin> SpecificExceptions = new Dictionary<OriginError, ExceptionsOfOrigin>();
 
-    public static readonly IDictionary<Type, ErrorResponse> GenericExceptions = new Dictionary<Type, ErrorResponse>();
+    public readonly IDictionary<Type, ErrorResponse> GenericExceptions = new Dictionary<Type, ErrorResponse>();
 
     public ExceptionStoreService()
     {
@@ -14,7 +14,7 @@ public class ExceptionStoreService
             HttpStatusCode.NotFound,
             "ResourceNotFound",
             (exception, context) => $"Resource: {exception.Resource} was not found with parameters: {string.Join(", ", exception.Parameters)}")
-
+            
             .AddGenericException<ResourceDuplicatedException>(
             HttpStatusCode.Conflict,
             "ResourceDuplicated",

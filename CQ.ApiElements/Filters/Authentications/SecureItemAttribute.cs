@@ -1,5 +1,4 @@
-﻿using CQ.ApiElements.Filters.ExceptionFilter;
-using CQ.ApiElements.Filters.Extensions;
+﻿using CQ.ApiElements.Filters.Extensions;
 using Microsoft.AspNetCore.Mvc.Filters;
 using System.Net;
 
@@ -16,14 +15,7 @@ public class SecureItemAttribute(ContextItem Item)
         }
         catch (Exception ex)
         {
-            var error = new ErrorResponse(
-                HttpStatusCode.Unauthorized,
-                "Unauthenticated",
-                "Item not saved",
-                string.Empty,
-                "Missing item in context related to token sent",
-                ex);
-
+            var error = BuildUnexpectedErrorResponse(ex);
             context.Result = BuildResponse(error);
         }
     }

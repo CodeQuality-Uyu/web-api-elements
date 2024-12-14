@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using System.Security.Principal;
 
 namespace CQ.ApiElements.Filters.Authentications;
-public abstract class SecureUserAttribute(ContextItem ContextItem = ContextItem.UserLogged)
+public abstract class SecureUserAttribute
     : BaseAttribute,
     IAsyncAuthorizationFilter
 {
@@ -16,14 +16,13 @@ public abstract class SecureUserAttribute(ContextItem ContextItem = ContextItem.
             var userLogged = await GetUserLoggedAsync(accountLogged).ConfigureAwait(false);
 
             context.SetItem(
-                ContextItem,
+                ContextItem.AccountLogged,
                 userLogged);
         }
         catch (Exception ex)
         {
             var error = BuildUnexpectedErrorResponse(ex);
-            var response = BuildResponse(error);
-            context.Result = response;
+            context.Result = BuildResponse(error);
         }
     }
 

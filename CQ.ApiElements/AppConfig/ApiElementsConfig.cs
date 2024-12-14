@@ -1,12 +1,15 @@
 ﻿using CQ.ApiElements.Filters.ExceptionFilter;
 using CQ.AuthProvider.Abstractions;
 using CQ.Extensions.ServiceCollection;
+using CQ.Utility;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using System.Security.Principal;
 
 namespace CQ.ApiElements.AppConfig;
+
 public static class ApiElementsConfig
 {
     public static MvcOptions AddExceptionGlobalHandler(this MvcOptions options)
@@ -26,7 +29,7 @@ public static class ApiElementsConfig
 
     public static IServiceCollection AddExceptionGlobalHandlerService(
         this IServiceCollection services,
-        LifeTime storeLifeTime)
+        LifeTime storeLifeTime = LifeTime.Scoped)
     {
         services
             .AddService<ExceptionStoreService>(storeLifeTime);
@@ -36,7 +39,7 @@ public static class ApiElementsConfig
 
     public static IServiceCollection AddExceptionGlobalHandlerService<TExceptionStore>(
         this IServiceCollection services,
-        LifeTime storeLifeTime)
+        LifeTime storeLifeTime = LifeTime.Scoped)
         where TExceptionStore : ExceptionStoreService
     {
         services
@@ -47,9 +50,25 @@ public static class ApiElementsConfig
         return services;
     }
 
+    public static IServiceCollection AddExceptionGlobalHandlerService<TIExceptionStore, TExceptionStore>(
+        this IServiceCollection services,
+        LifeTime storeLifeTime = LifeTime.Scoped)
+        where TIExceptionStore : class
+        where TExceptionStore : ExceptionStoreService, TIExceptionStore
+    {
+        services
+            .AddService<ExceptionStoreService, TExceptionStore>(storeLifeTime)
+            .AddService<TIExceptionStore, TExceptionStore>(storeLifeTime)
+            .AddService<TExceptionStore>(storeLifeTime)
+            ;
+
+        return services;
+    }
+
     public static IServiceCollection AddFakeAuthentication<TPrincipal>(
         this IServiceCollection services,
         IConfiguration configuration,
+        IHostEnvironment environment,
         string fakeAuthenticationKey = "Authentication:Fake",
         string fakeAuthenticationActiveKey = "Authentication:Fake:IsActive",
         LifeTime fakeAuthenticationLifeTime = LifeTime.Scoped)
@@ -57,13 +76,16 @@ public static class ApiElementsConfig
     {
         var isActive = configuration.GetValue<bool>(fakeAuthenticationActiveKey);
 
-        if (!isActive)
+        if (!isActive || environment.IsProduction())
         {
             return services;
         }
 
-        TPrincipal val = configuration.GetSection(fakeAuthenticationKey).Get<TPrincipal>();
-        services.AddService((IPrincipal)val, fakeAuthenticationLifeTime);
+        var val = configuration.GetSection(fakeAuthenticationKey).Get<TPrincipal>();
+
+        Guard.ThrowIsNull(val, fakeAuthenticationKey);
+
+        services.AddService((IPrincipal)val!, fakeAuthenticationLifeTime);
 
         return services;
     }

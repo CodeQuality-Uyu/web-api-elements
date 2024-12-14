@@ -102,14 +102,14 @@ internal sealed record class DynamicErrorResponse<TException>
         Code = _codeFunction != null ? BuildElement(_codeFunction, context) : Code;
         StatusCode = _statusCodeFunction != null ? BuildElement(_statusCodeFunction, context) : StatusCode;
         Message = _messageFunction != null ? BuildElement(_messageFunction, context) : Message;
-        LogMessage = _logMessageFunction != null ? BuildElement(_logMessageFunction, context) : LogMessage;
-        (StatusCode, Code, Message, LogMessage) = _function != null
+        Log = _logMessageFunction != null ? BuildElement(_logMessageFunction, context) : Log;
+        (StatusCode, Code, Message, Log) = _function != null
             ? BuildElement(_function, context)
             : (
             StatusCode,
             Code,
             Message,
-            LogMessage);
+            Log);
 
         return this;
     }

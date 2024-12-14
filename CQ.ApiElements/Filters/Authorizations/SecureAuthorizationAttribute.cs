@@ -9,7 +9,6 @@ using System.Security.Principal;
 namespace CQ.ApiElements.Filters.Authorizations;
 
 public class SecureAuthorizationAttribute(
-    ContextItem ContextItem,
     string? Permission = null)
     : BaseAttribute,
     IAsyncAuthorizationFilter
@@ -18,13 +17,7 @@ public class SecureAuthorizationAttribute(
     {
         try
         {
-            var accountLogged = context.GetItemOrDefault(ContextItem);
-            var isLogged = context.GetItemOrDefault(ContextItem.IsAuthenticated);
-
-            if(Guard.IsNull(accountLogged) && Guard.IsNotNull(isLogged))
-            {
-                return;
-            }
+            var accountLogged = context.GetItemOrDefault(ContextItem.AccountLogged);
 
             if (Guard.IsNull(accountLogged))
             {
@@ -59,8 +52,7 @@ public class SecureAuthorizationAttribute(
         catch (Exception ex)
         {
             var error = BuildUnexpectedErrorResponse(ex);
-            var response = BuildResponse(error);
-            context.Result = response;
+            context.Result = BuildResponse(error);
         }
     }
 
@@ -95,7 +87,7 @@ public class SecureAuthorizationAttribute(
         string permission,
         AuthorizationFilterContext context)
     {
-        var accountLogged = context.GetItem<IPrincipal>(ContextItem);
+        var accountLogged = context.GetItem<IPrincipal>(ContextItem.AccountLogged);
 
         var hasPermissionAccount = accountLogged.IsInRole(permission);
 
