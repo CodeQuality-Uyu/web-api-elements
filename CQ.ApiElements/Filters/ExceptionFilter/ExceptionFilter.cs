@@ -40,7 +40,7 @@ public class ExceptionFilter(ExceptionStoreService _exceptionStoreService)
             context.RouteData.Values["action"].ToString()!);
     }
 
-    protected virtual IActionResult BuildResponse(ErrorResponse response)
+    protected new virtual IActionResult BuildResponse(ErrorResponse response)
     {
         return new ObjectResult(response)
         {

@@ -14,9 +14,9 @@ public record class ErrorResponse()
 
     public string? Description { get; set; }
 
-    public string? LogMessage { get; protected set; }
+    public string? Log { get; protected set; }
 
-    public Exception? Exception { get; private set; }
+    public ExceptionMessage? Exception { get; private set; }
 
     /// <summary>
     /// Hard coded info
@@ -39,7 +39,7 @@ public record class ErrorResponse()
         StatusCode = statusCode;
         Code = code;
         Message = message;
-        LogMessage = logMessage;
+        Log = logMessage;
         Description = description;
         SetException(exception);
     }
@@ -52,7 +52,7 @@ public record class ErrorResponse()
             return;
         }
 
-        Exception = exception;
+        Exception = new(exception);
     }
 
     public virtual ErrorResponse CompileErrorResponse(ExceptionThrownContext context)

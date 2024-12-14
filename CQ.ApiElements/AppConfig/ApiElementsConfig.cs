@@ -5,6 +5,7 @@ using CQ.Utility;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using System.Security.Principal;
 
 namespace CQ.ApiElements.AppConfig;
@@ -67,6 +68,7 @@ public static class ApiElementsConfig
     public static IServiceCollection AddFakeAuthentication<TPrincipal>(
         this IServiceCollection services,
         IConfiguration configuration,
+        IHostEnvironment environment,
         string fakeAuthenticationKey = "Authentication:Fake",
         string fakeAuthenticationActiveKey = "Authentication:Fake:IsActive",
         LifeTime fakeAuthenticationLifeTime = LifeTime.Scoped)
@@ -74,7 +76,7 @@ public static class ApiElementsConfig
     {
         var isActive = configuration.GetValue<bool>(fakeAuthenticationActiveKey);
 
-        if (!isActive)
+        if (!isActive || environment.IsProduction())
         {
             return services;
         }
