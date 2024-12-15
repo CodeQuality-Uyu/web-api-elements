@@ -26,8 +26,7 @@ public abstract class SecureAuthenticationAttribute
         {
             var authorizationHeader = context.HttpContext.Request.Headers[HeaderNames.Authorization];
 
-            var isFakeAuthActive = IsFakeAuthActive(context);
-            if (isFakeAuthActive && Guard.IsNullOrEmpty(authorizationHeader))
+            if (IsFakeAuthActive(context) && Guard.IsNullOrEmpty(authorizationHeader))
             {
                 return;
             }
