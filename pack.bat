@@ -12,6 +12,6 @@ rem Empaquetar el proyecto
 dotnet pack %projectName%/%projectName%.csproj --configuration Release /p:Version=%input% --no-build --output ./packs/.
 
 rem Copiar el paquete a un directorio espec�fico
-set targetDir="C:\Users\Daniel Acevedo\Documents\GitHub\CodeQuality\LocalNuget"
+set targetDir="C:\Users\Vader\Documents\GitHub\CodeQuality\local-nuget"
 xcopy ".\packs\*" %targetDir% /H /C /Y
 pause

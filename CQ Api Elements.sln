@@ -16,7 +16,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQ.Exceptions", "CQ.Exceptions\CQ.Exceptions.csproj", "{EAD9E427-A5A7-4CF4-B0AF-23A5803E48DA}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{A19266E0-940E-41FA-87AB-F00B9A02DBEE}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{A19266E0-940E-41FA-87AB-F00B9A02DBEE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
