@@ -37,8 +37,8 @@ public class SecureAuthorizationAttribute(
             if(!isHeaderAuthorized)
             {
                 var errorResponse = new ErrorResponse(
-                    HttpStatusCode.Unauthorized,
-                    "Unauthorized",
+                    HttpStatusCode.Forbidden,
+                    "Forbidden",
                     "Insufficient permissions",
                     string.Empty,
                     $"You don't have the permission {permission} to access this request",
