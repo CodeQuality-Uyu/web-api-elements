@@ -9,7 +9,7 @@ using System.Security.Principal;
 namespace CQ.ApiElements.Filters.Authorizations;
 
 public class SecureAuthorizationAttribute(
-    params string[]? Permission)
+    params string[] Permissions)
     : BaseAttribute,
     IAsyncAuthorizationFilter
 {
@@ -79,7 +79,12 @@ public class SecureAuthorizationAttribute(
         string headerValue,
         AuthorizationFilterContext context)
     {
-        return Permission?.ToList() ?? [$"{context.RouteData.Values["action"].ToString().ToLower()}-{context.RouteData.Values["controller"].ToString().ToLower()}"];
+        if (Permissions.Length != 0)
+        {
+            return Permissions.ToList();
+        }
+
+        return [$"{context.RouteData.Values["action"].ToString().ToLower()}-{context.RouteData.Values["controller"].ToString().ToLower()}"];
     }
 
     protected virtual Task<bool> HasRequestPermissionAsync(
