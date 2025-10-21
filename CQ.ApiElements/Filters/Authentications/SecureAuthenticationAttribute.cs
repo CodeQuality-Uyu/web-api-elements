@@ -9,7 +9,7 @@ using System.Security.Principal;
 
 namespace CQ.ApiElements.Filters.Authentications;
 
-public abstract class SecureAuthenticationAttribute(params string[] _authorizationTypes)
+public class SecureAuthenticationAttribute(params object[] _authorizationTypes)
     : BaseAttribute,
     IAsyncAuthorizationFilter
 {
@@ -41,7 +41,7 @@ public abstract class SecureAuthenticationAttribute(params string[] _authorizati
 
             var uniqueToken = authorizationHeaderVaue.ToString();
 
-            var authorizationType = _authorizationTypes.FirstOrDefault(a => uniqueToken.Contains(a, StringComparison.OrdinalIgnoreCase));
+            var authorizationType = _authorizationTypes.FirstOrDefault(a => uniqueToken.Contains(a.ToString(), StringComparison.OrdinalIgnoreCase))?.ToString();
             if (Guard.IsNullOrEmpty(authorizationType) || authorizationHeaderVaue.Count > 1)
             {
                 BuildInvalidHeaderFormat(context);

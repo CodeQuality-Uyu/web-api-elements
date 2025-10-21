@@ -1,10 +1,7 @@
 ﻿
 namespace CQ.ApiElements.Filters.Authentications;
 
-public sealed class BearerAuthenticationAttribute
-    : SecureAuthenticationAttribute
+public sealed class BearerAuthenticationAttribute()
+    : SecureAuthenticationAttribute("Bearer")
 {
-    public BearerAuthenticationAttribute() : base("Bearer")
-    {
-    }
 }
