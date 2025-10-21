@@ -4,6 +4,7 @@ using CQ.AuthProvider.Abstractions;
 using CQ.Utility;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Net.Http.Headers;
+using System;
 using System.Net;
 using System.Security.Principal;
 
@@ -162,7 +163,12 @@ public class SecureAuthenticationAttribute(params object[] _authorizationTypes)
     {
         var tokenServices = context.GetService<IEnumerable<ITokenService>>();
 
-        var tokenService = tokenServices.First(t => string.Equals(t.AuthorizationTypeHandled, authorizationType, StringComparison.OrdinalIgnoreCase));
+        var tokenService = tokenServices.FirstOrDefault(t => string.Equals(t.AuthorizationTypeHandled, authorizationType, StringComparison.OrdinalIgnoreCase));
+
+        if(tokenService == null)
+        {
+            throw new InvalidOperationException("No token service found for authorization type " + authorizationType);
+        }
 
         var isValidToken = await tokenService
             .IsValidAsync(token)
