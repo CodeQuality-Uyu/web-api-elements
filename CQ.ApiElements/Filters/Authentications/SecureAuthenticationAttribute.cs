@@ -1,16 +1,16 @@
 ﻿using CQ.ApiElements.Filters.ExceptionFilter;
 using CQ.ApiElements.Filters.Extensions;
-using CQ.AuthProvider.Abstractions;
 using CQ.Utility;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Net.Http.Headers;
-using System;
 using System.Net;
 using System.Security.Principal;
 
 namespace CQ.ApiElements.Filters.Authentications;
 
-public class SecureAuthenticationAttribute(params object[] _authorizationTypes)
+public class SecureAuthenticationAttribute(
+    object? keyItem = null,
+    params object[] authorizationTypes)
     : BaseAttribute,
     IAsyncAuthorizationFilter
 {
@@ -42,7 +42,7 @@ public class SecureAuthenticationAttribute(params object[] _authorizationTypes)
 
             var uniqueToken = authorizationHeaderVaue.ToString();
 
-            var authorizationType = _authorizationTypes.FirstOrDefault(a => uniqueToken.Contains(a.ToString(), StringComparison.OrdinalIgnoreCase))?.ToString();
+            var authorizationType = authorizationTypes.FirstOrDefault(a => uniqueToken.Contains(a.ToString(), StringComparison.OrdinalIgnoreCase))?.ToString();
             if (Guard.IsNullOrEmpty(authorizationType) || authorizationHeaderVaue.Count > 1)
             {
                 BuildInvalidHeaderFormat(context);
@@ -119,22 +119,29 @@ public class SecureAuthenticationAttribute(params object[] _authorizationTypes)
         string token,
         AuthorizationFilterContext context)
     {
+        var tokenServices = context.GetService<IEnumerable<ITokenService>>();
+
+        var tokenService = tokenServices.FirstOrDefault(t => string.Equals(t.AuthorizationTypeHandled, authorizationType, StringComparison.OrdinalIgnoreCase));
+
+        if (tokenService == null)
+        {
+            throw new InvalidOperationException("No token service found for authorization type " + authorizationType);
+        }
+
         var isValid = await IsFormatOfHeaderValidAsync(
-            authorizationType,
             token,
-            context)
+            tokenService)
             .ConfigureAwait(false);
         if (!isValid)
         {
             BuildInvalidHeaderFormat(context);
         }
 
-        var itemRequested = await GetItemAsync(
-            authorizationType,
+        var itemRequested = await GetItemOrDefaultAsync(
            token,
-           context)
+           tokenService)
            .ConfigureAwait(false);
-        if (itemRequested.error != null)
+        if (itemRequested == null)
         {
             var errorResponse = new ErrorResponse(
                 HttpStatusCode.Unauthorized,
@@ -142,34 +149,33 @@ public class SecureAuthenticationAttribute(params object[] _authorizationTypes)
                 "Authorization is expired",
                 string.Empty,
                 "The authorization expired",
-                itemRequested.error
-                );
+                null);
 
             context.Result = BuildResponse(errorResponse);
             return;
         }
 
-        context.SetItem(
-            ContextItem.AccountLogged,
-            itemRequested.item);
+        if (Guard.IsNull(keyItem))
+        {
+            context.SetItem(
+                ContextItem.AccountLogged,
+                itemRequested);
+            return;
+        }
+        else
+        {
+            context.SetItem(
+                keyItem!,
+                itemRequested);
+        }
     }
 
 
     #region Assert header
     protected virtual async Task<bool> IsFormatOfHeaderValidAsync(
-        string authorizationType,
         string token,
-        AuthorizationFilterContext context)
+        ITokenService tokenService)
     {
-        var tokenServices = context.GetService<IEnumerable<ITokenService>>();
-
-        var tokenService = tokenServices.FirstOrDefault(t => string.Equals(t.AuthorizationTypeHandled, authorizationType, StringComparison.OrdinalIgnoreCase));
-
-        if(tokenService == null)
-        {
-            throw new InvalidOperationException("No token service found for authorization type " + authorizationType);
-        }
-
         var isValidToken = await tokenService
             .IsValidAsync(token)
             .ConfigureAwait(false);
@@ -178,26 +184,14 @@ public class SecureAuthenticationAttribute(params object[] _authorizationTypes)
     }
     #endregion
 
-    private async Task<(object? item, Exception? error)> GetItemAsync(
-        string authorizationType,
+    private async Task<object?> GetItemOrDefaultAsync(
         string token,
-        AuthorizationFilterContext context)
+        ITokenService tokenService)
     {
-        try
-        {
-            var itemLoggedServices = context.GetService<IEnumerable<IItemLoggedService>>();
+        var itemLogged = await tokenService
+            .GetOrDefaultAsync(token)
+            .ConfigureAwait(false);
 
-            var itemLoggedService = itemLoggedServices.First(i => string.Equals(i.AuthorizationTypeHandled, authorizationType, StringComparison.OrdinalIgnoreCase));
-
-            var itemLogged = await itemLoggedService
-                .GetByHeaderAsync(token)
-                .ConfigureAwait(false);
-
-            return (itemLogged, null);
-        }
-        catch (Exception ex)
-        {
-            return (null, ex);
-        }
+        return itemLogged;
     }
 }

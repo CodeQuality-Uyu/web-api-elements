@@ -1,13 +1,14 @@
 ﻿
 namespace CQ.ApiElements.Filters.Exceptions;
 
-internal sealed class ContextItemNotFoundException(ContextItem item)
+internal sealed class ContextItemNotFoundException<TKey>(TKey item)
     : Exception
+    where TKey : Enum
 {
-    public readonly ContextItem Item = item;
+    public readonly TKey Item = item;
 
-    public static void Throw(ContextItem item)
+    public static void Throw(TKey item)
     {
-        throw new ContextItemNotFoundException(item);
+        throw new ContextItemNotFoundException<TKey>(item);
     }
 }

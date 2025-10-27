@@ -13,4 +13,15 @@ public static class ControllerBaseExtensions
 
         return result;
     }
+
+    public static TResult GetItem<TKey, TResult>(
+        this ControllerBase controller,
+        TKey item)
+        where TKey : Enum
+        where TResult : class
+    {
+        var result = controller.HttpContext.GetItem<TKey, TResult>(item);
+
+        return result;
+    }
 }

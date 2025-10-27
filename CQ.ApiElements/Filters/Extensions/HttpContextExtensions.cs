@@ -16,6 +16,17 @@ public static class HttpContextExtensions
         return (TResult)element;
     }
 
+    public static TResult GetItem<TKey, TResult>(
+        this HttpContext context,
+        TKey item)
+        where TKey : Enum
+        where TResult : class
+    {
+        var element = GetItem(context, item);
+
+        return (TResult)element;
+    }
+
     public static object GetItem(
         this HttpContext context,
         ContextItem item)
@@ -24,7 +35,22 @@ public static class HttpContextExtensions
 
         if (Guard.IsNull(element))
         {
-            ContextItemNotFoundException.Throw(item);
+            ContextItemNotFoundException<ContextItem>.Throw(item);
+        }
+
+        return element;
+    }
+
+    public static object GetItem<TKey>(
+        this HttpContext context,
+        TKey item)
+        where TKey : Enum
+    {
+        var element = context.Items[item];
+
+        if (Guard.IsNull(element))
+        {
+            ContextItemNotFoundException<TKey>.Throw(item);
         }
 
         return element;

@@ -27,6 +27,15 @@ public static class FilterContextExtensions
         return context.HttpContext.GetItem<TItem>(item);
     }
 
+    public static TItem GetItem<TKey, TItem>(
+        this FilterContext context,
+        TKey item)
+        where TKey : Enum
+        where TItem : class
+    {
+        return context.HttpContext.GetItem<TKey, TItem>(item);
+    }
+
     public static TItem? GetItemOrDefault<TItem>(
         this FilterContext context,
         ContextItem item)
@@ -44,7 +53,7 @@ public static class FilterContextExtensions
 
     public static void SetItem(
         this FilterContext context,
-        ContextItem item,
+        object item,
         object value)
     {
         context.HttpContext.Items[item] = value;

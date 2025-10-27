@@ -1,5 +1,4 @@
 ﻿using CQ.ApiElements.Filters.ExceptionFilter;
-using CQ.AuthProvider.Abstractions;
 using CQ.Extensions.ServiceCollection;
 using CQ.Utility;
 using Microsoft.AspNetCore.Mvc;
@@ -96,16 +95,6 @@ public static class ApiElementsConfig
         where TService : class, ITokenService
     {
         services.AddService<ITokenService, TService>(tokenServiceLifeTime);
-
-        return services;
-    }
-
-    public static IServiceCollection AddItemLoggedService<TService>(
-        this IServiceCollection services,
-        LifeTime itemLoggedServiceLifeTime)
-        where TService : class, IItemLoggedService
-    {
-        services.AddService<IItemLoggedService, TService>(itemLoggedServiceLifeTime);
 
         return services;
     }
