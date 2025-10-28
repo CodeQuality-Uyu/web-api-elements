@@ -9,7 +9,7 @@ using System.Security.Principal;
 namespace CQ.ApiElements.Filters.Authorizations;
 
 public class SecureAuthorizationAttribute(
-    params string[] Permissions)
+    params string[] permissions)
     : BaseAttribute,
     IAsyncAuthorizationFilter
 {
@@ -17,7 +17,7 @@ public class SecureAuthorizationAttribute(
     {
         try
         {
-            var accountLogged = context.GetItemOrDefault(ContextItem.AccountLogged);
+            var accountLogged = context.GetItemOrDefault<IPrincipal>(ContextItem.AccountLogged);
 
             if (Guard.IsNull(accountLogged))
             {
@@ -33,7 +33,7 @@ public class SecureAuthorizationAttribute(
             }
 
             var authorizationHeader = context.HttpContext.Request.Headers[HeaderNames.Authorization];
-            var (isHeaderAuthorized, permissions) = await IsRequestAuthorizedAsync(authorizationHeader, context).ConfigureAwait(false);
+            var (isHeaderAuthorized, permissions) = await IsRequestAuthorizedAsync(accountLogged, context).ConfigureAwait(false);
             if (!isHeaderAuthorized)
             {
                 var errorResponse = new ErrorResponse(
@@ -58,14 +58,17 @@ public class SecureAuthorizationAttribute(
 
     #region Assert permission
     private async Task<(bool isAuthorized, List<string> permission)> IsRequestAuthorizedAsync(
-        string headerValue,
+        IPrincipal accountLogged,
         AuthorizationFilterContext context)
     {
-        var permissions = BuildPermissions(headerValue, context);
+        var permissions = BuildPermissions(context);
 
         try
         {
-            var isAuthorized = await HasRequestPermissionAsync(headerValue, permissions, context).ConfigureAwait(false);
+            var isAuthorized = await HasRequestPermissionAsync(
+                permissions,
+                accountLogged,
+                context).ConfigureAwait(false);
 
             return (isAuthorized, permissions);
         }
@@ -76,24 +79,21 @@ public class SecureAuthorizationAttribute(
     }
 
     protected virtual List<string> BuildPermissions(
-        string headerValue,
         AuthorizationFilterContext context)
     {
-        if (Permissions.Length != 0)
+        if (permissions.Length != 0)
         {
-            return Permissions.ToList();
+            return permissions.ToList();
         }
 
         return [$"{context.RouteData.Values["action"].ToString().ToLower()}-{context.RouteData.Values["controller"].ToString().ToLower()}"];
     }
 
     protected virtual Task<bool> HasRequestPermissionAsync(
-        string headerValue,
         List<string> permissions,
+        IPrincipal accountLogged,
         AuthorizationFilterContext context)
     {
-        var accountLogged = context.GetItem<IPrincipal>(ContextItem.AccountLogged);
-
         var hasPermissionAccount = permissions.Any(accountLogged.IsInRole);
 
         return Task.FromResult(hasPermissionAccount);
