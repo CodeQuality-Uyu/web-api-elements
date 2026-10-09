@@ -1,10 +1,13 @@
 namespace CQ.ApiElements;
 
+/// <summary>
+/// Authenticates the tokens of one <see cref="AuthorizationType"/> for
+/// <see cref="Filters.Authentications.SecureAuthenticationAttribute"/>. Issuing
+/// tokens is not part of it: each app does that its own way.
+/// </summary>
 public interface ITokenService
 {
     AuthorizationType AuthorizationTypeHandled { get; }
-
-    Task<string> CreateAsync(object item);
 
     /// <summary>
     /// Whether <paramref name="value"/> has the format this service issues.

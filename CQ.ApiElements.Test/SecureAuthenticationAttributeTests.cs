@@ -168,8 +168,6 @@ public sealed class SecureAuthenticationAttributeTests
 
         public AuthorizationType AuthorizationTypeHandled => authorizationType;
 
-        public Task<string> CreateAsync(object item) => throw new NotSupportedException();
-
         public Task<bool> IsValidAsync(string value)
         {
             ValidateCalls++;
