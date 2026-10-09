@@ -8,9 +8,16 @@ using System.Security.Principal;
 
 namespace CQ.ApiElements.Filters.Authentications;
 
+/// <summary>
+/// Authenticates the request with the Authorization header,
+/// <c>&lt;scheme&gt; &lt;token&gt;</c>, accepting only the schemes in
+/// <paramref name="authorizationTypes"/>. The token goes to the first
+/// registered <see cref="ITokenService"/> that handles the scheme and
+/// recognizes the token, so several services can share a scheme.
+/// </summary>
 public class SecureAuthenticationAttribute(
     object? keyItem = null,
-    params object[] authorizationTypes)
+    params AuthorizationType[] authorizationTypes)
     : BaseAttribute,
     IAsyncAuthorizationFilter
 {
@@ -40,18 +47,12 @@ public class SecureAuthenticationAttribute(
                 return;
             }
 
-            var uniqueToken = authorizationHeaderVaue.ToString();
-
-            var authorizationType = authorizationTypes.FirstOrDefault(a => uniqueToken.Contains(a.ToString(), StringComparison.OrdinalIgnoreCase))?.ToString();
-            if (Guard.IsNullOrEmpty(authorizationType) || authorizationHeaderVaue.Count > 1)
+            if (authorizationHeaderVaue.Count > 1 ||
+                !TryParseHeader(authorizationHeaderVaue.ToString(), out var authorizationType, out var token))
             {
                 BuildInvalidHeaderFormat(context);
                 return;
             }
-
-            var token = uniqueToken
-                .Replace(authorizationType, string.Empty)
-                .Trim();
 
             await HandleAuthenticationAsync(
                 authorizationType,
@@ -114,27 +115,58 @@ public class SecureAuthenticationAttribute(
         context.Result = BuildResponse(errorResponse);
     }
 
+    /// <summary>
+    /// The scheme is the first word of the header and has to be one of the
+    /// schemes the endpoint accepts, matched by name (a number is not a
+    /// scheme); the token is the rest.
+    /// </summary>
+    private bool TryParseHeader(
+        string header,
+        out AuthorizationType authorizationType,
+        out string token)
+    {
+        authorizationType = default;
+        token = string.Empty;
+
+        var value = header.Trim();
+        var separator = value.IndexOf(' ');
+        if (separator <= 0)
+        {
+            return false;
+        }
+
+        var scheme = value[..separator];
+        token = value[(separator + 1)..].Trim();
+
+        return Enum.TryParse(scheme, ignoreCase: true, out authorizationType) &&
+            string.Equals(authorizationType.ToString(), scheme, StringComparison.OrdinalIgnoreCase) &&
+            authorizationTypes.Contains(authorizationType) &&
+            token.Length > 0;
+    }
+
     private async Task HandleAuthenticationAsync(
-        string authorizationType,
+        AuthorizationType authorizationType,
         string token,
         AuthorizationFilterContext context)
     {
-        var tokenServices = context.GetService<IEnumerable<ITokenService>>();
+        var tokenServices = context
+            .GetService<IEnumerable<ITokenService>>()
+            .Where(t => t.AuthorizationTypeHandled == authorizationType)
+            .ToList();
 
-        var tokenService = tokenServices.FirstOrDefault(t => string.Equals(t.AuthorizationTypeHandled, authorizationType, StringComparison.OrdinalIgnoreCase));
-
-        if (tokenService == null)
+        if (tokenServices.Count == 0)
         {
             throw new InvalidOperationException("No token service found for authorization type " + authorizationType);
         }
 
-        var isValid = await IsFormatOfHeaderValidAsync(
+        var tokenService = await GetIssuerOrDefaultAsync(
             token,
-            tokenService)
+            tokenServices)
             .ConfigureAwait(false);
-        if (!isValid)
+        if (tokenService == null)
         {
             BuildInvalidHeaderFormat(context);
+            return;
         }
 
         var itemRequested = await GetItemOrDefaultAsync(
@@ -172,6 +204,30 @@ public class SecureAuthenticationAttribute(
 
 
     #region Assert header
+    /// <summary>
+    /// The first service of the scheme that recognizes the token. Null when
+    /// none does.
+    /// </summary>
+    private async Task<ITokenService?> GetIssuerOrDefaultAsync(
+        string token,
+        List<ITokenService> tokenServices)
+    {
+        foreach (var tokenService in tokenServices)
+        {
+            var isValid = await IsFormatOfHeaderValidAsync(
+                token,
+                tokenService)
+                .ConfigureAwait(false);
+
+            if (isValid)
+            {
+                return tokenService;
+            }
+        }
+
+        return null;
+    }
+
     protected virtual async Task<bool> IsFormatOfHeaderValidAsync(
         string token,
         ITokenService tokenService)
