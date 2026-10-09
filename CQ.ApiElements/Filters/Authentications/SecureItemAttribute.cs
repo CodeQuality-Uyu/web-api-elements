@@ -1,8 +1,8 @@
 ﻿using CQ.ApiElements.Filters.Extensions;
 using Microsoft.AspNetCore.Mvc.Filters;
-using System.Net;
 
 namespace CQ.ApiElements.Filters.Authentications;
+
 public class SecureItemAttribute(ContextItem Item)
     : BaseAttribute,
     IAuthorizationFilter
